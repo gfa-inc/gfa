@@ -1,0 +1,38 @@
+server:
+  addr: "127.0.0.1:8080"
+  base_path: "/api/v1"
+logger:
+  level: debug
+mysql:
+  default:
+    dns: "gfa:123456@tcp(127.0.0.1:3306)/gfa?charset=utf8mb4&parseTime=True&loc=Local"
+    default: true
+elastic:
+  default:
+    addr:
+      - "http://127.0.0.1:9200"
+    default: true
+redis:
+  default:
+    addrs:
+      - "127.0.0.1:6379"
+    password: "gfa"
+    default: true
+session:
+  private_key: "gfa123456"
+  max_age: 86400
+  redis:
+    addrs:
+      - "127.0.0.1:6379"
+    password: "gfa"
+security:
+  jwt:
+    private_key: "gfa123456"
+  api_key:
+    enable: true
+kafka:
+  default:
+    brokers:
+      - "127.0.0.1:9092"
+    topic: "gfa"
+    default: true
