@@ -18,6 +18,11 @@ var (
 	permittedRoutes map[string]struct{}
 )
 
+func init() {
+	validators = make(map[string]Validator)
+	permittedRoutes = make(map[string]struct{})
+}
+
 func newSessionValidator() *SessionValidator {
 	return &SessionValidator{}
 }
@@ -33,9 +38,6 @@ func newApiKeyValidator() *ApiKeyValidator {
 }
 
 func Security() gin.HandlerFunc {
-	validators = make(map[string]Validator)
-	permittedRoutes = make(map[string]struct{})
-
 	if config.Get("security.session") != nil {
 		validators["session"] = newSessionValidator()
 	}

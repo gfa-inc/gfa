@@ -8,6 +8,7 @@ import (
 	"github.com/gfa-inc/gfa/common/db"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/common/nsdb"
+	"github.com/gfa-inc/gfa/common/swag"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares"
 	"github.com/gfa-inc/gfa/middlewares/security"
@@ -92,9 +93,11 @@ func (g *Gfa) Run() {
 	// security
 	g.Use(security.Security())
 
-	// routes
 	basePath := config.GetString("server.base_path")
 	rootRouter := g.Group(basePath)
+	// swagger
+	swag.Setup(rootRouter)
+	// routes
 	for _, controller := range g.controllers {
 		controller.Setup(rootRouter)
 	}
