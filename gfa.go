@@ -11,6 +11,7 @@ import (
 	"github.com/gfa-inc/gfa/common/swag"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares"
+	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"github.com/gfa-inc/gfa/middlewares/security"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
@@ -79,7 +80,7 @@ func (g *Gfa) Run() {
 	// onerror
 	g.Use(middlewares.OnError())
 	// requestid
-	g.Use(middlewares.Requestid())
+	g.Use(request_id.RequestID())
 	// access log
 	g.Use(middlewares.AccessLog())
 	// custom middlewares
