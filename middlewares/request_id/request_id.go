@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var defaultContextKey = "traceID"
 var ContextKey string
 
 type Config struct {
@@ -17,10 +16,10 @@ type Config struct {
 }
 
 func RequestID() gin.HandlerFunc {
-	config.SetDefault("requestid.header_key", "X-Request-ID")
-	config.SetDefault("requestid.context_key", defaultContextKey)
-
-	var option Config
+	option := Config{
+		HeaderKey:  "X-Request-ID",
+		ContextKey: "traceID",
+	}
 	err := config.UnmarshalKey("requestid", &option)
 	if err != nil {
 		logger.Panic(err)

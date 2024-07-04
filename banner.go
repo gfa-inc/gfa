@@ -12,10 +12,10 @@ type bannerConfig struct {
 }
 
 func printBanner() {
-	var option bannerConfig
-	config.SetDefault("banner.enabled", true)
-	config.SetDefault("banner.text", "GFA")
-
+	option := bannerConfig{
+		Enabled: true,
+		Text:    "GFA",
+	}
 	err := config.UnmarshalKey("banner", &option)
 	if err != nil {
 		logger.Debug(err)
