@@ -219,7 +219,13 @@ func init() {
 	RegisterCore("console", consoleCoreFactory)
 }
 
-func Setup(option Config) {
+type OptionFunc func(option *Config)
+
+func Setup(opts ...OptionFunc) {
+	var option Config
+	for _, opt := range opts {
+		opt(&option)
+	}
 	globalLogger = New(option)
 
 	Debugf("Added logger core: %s", strings.Join(maputil.Keys(coreMap), ", "))

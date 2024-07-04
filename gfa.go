@@ -13,6 +13,7 @@ import (
 	"github.com/gfa-inc/gfa/middlewares"
 	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"github.com/gfa-inc/gfa/middlewares/security"
+	"github.com/gfa-inc/gfa/middlewares/session"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -88,8 +89,8 @@ func (g *Gfa) Run() {
 		g.Use(mdw)
 	}
 	// session
-	if middlewares.SessionEnabled() {
-		g.Use(middlewares.Session())
+	if session.Enabled() {
+		g.Use(session.Session())
 	}
 	// security
 	g.Use(security.Security())
@@ -123,13 +124,13 @@ func (g *Gfa) Run() {
 	}
 }
 
-func parseLoggerConfig() logger.Config {
-	var option logger.Config
-	err := config.UnmarshalKey("logger", &option)
-	if err != nil {
-		log.Panic(err)
+func parseLoggerConfig() logger.OptionFunc {
+	return func(option *logger.Config) {
+		err := config.UnmarshalKey("logger", option)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
-	return option
 }
 
 func WithGinOption(opts ...gin.OptionFunc) {

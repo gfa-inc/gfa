@@ -3,8 +3,8 @@ package logger
 import "testing"
 
 func TestSetup(t *testing.T) {
-	Setup(Config{
-		Level: "debug",
+	Setup(func(option *Config) {
+		option.Level = "debug"
 	})
 	Debug("debug")
 	Warn("warn")
