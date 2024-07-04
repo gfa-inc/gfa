@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 type Config struct {
@@ -114,6 +116,13 @@ func Get(key string) any {
 }
 
 func UnmarshalKey(key string, rawVal any, opts ...viper.DecoderConfigOption) error {
+	matchName := func(c *mapstructure.DecoderConfig) {
+		c.MatchName = func(mapKey, fieldName string) bool {
+			mapKey = strings.ReplaceAll(mapKey, "_", "")
+			return strings.EqualFold(mapKey, fieldName)
+		}
+	}
+	opts = append(opts, matchName)
 	return viper.UnmarshalKey(key, rawVal, opts...)
 }
 
