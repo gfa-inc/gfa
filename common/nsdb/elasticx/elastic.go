@@ -19,7 +19,7 @@ var (
 
 type Config struct {
 	Name     string
-	Addr     []string
+	Addrs    []string
 	Username string
 	Password string
 	Default  bool
@@ -27,7 +27,7 @@ type Config struct {
 
 func NewClient(option Config) (*elasticsearch.TypedClient, error) {
 	client, err := elasticsearch.NewTypedClient(elasticsearch.Config{
-		Addresses:           option.Addr,
+		Addresses:           option.Addrs,
 		Username:            option.Username,
 		Password:            option.Password,
 		CompressRequestBody: true,
@@ -51,7 +51,7 @@ func NewClient(option Config) (*elasticsearch.TypedClient, error) {
 		return nil, err
 	}
 
-	logger.Infof("Connectng to elastic [%s] %s", option.Name, strings.Join(option.Addr, ", "))
+	logger.Infof("Connectng to elastic [%s] %s", option.Name, strings.Join(option.Addrs, ", "))
 	return client, nil
 }
 

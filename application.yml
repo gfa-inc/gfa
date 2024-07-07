@@ -9,7 +9,7 @@ mysql:
     default: true
 elastic:
   default:
-    addr:
+    addrs:
       - "http://127.0.0.1:9200"
     default: true
 redis:
