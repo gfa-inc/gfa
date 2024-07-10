@@ -5,6 +5,7 @@ import (
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 func OnError() gin.HandlerFunc {
@@ -20,7 +21,7 @@ func OnError() gin.HandlerFunc {
 		for _, err := range c.Errors {
 			switch e := err.Err.(type) {
 			case *core.ParamErr:
-				_ = c.AbortWithError(http.StatusBadRequest, e)
+				c.AbortWithStatusJSON(http.StatusBadRequest, core.NewFailedResponse(strconv.Itoa(http.StatusBadRequest), e.Error()))
 			case *core.BizErr:
 				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(e.Code, e.Message))
 			default:
