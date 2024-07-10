@@ -41,6 +41,10 @@ func NewGfa() Gfa {
 	}
 }
 
+func init() {
+	gfa = NewGfa()
+}
+
 func (g *Gfa) WithGinOption(opts ...gin.OptionFunc) {
 	g.ginOpts = append(g.ginOpts, opts...)
 }
@@ -54,57 +58,6 @@ func (g *Gfa) WithMiddleware(mdws ...gin.HandlerFunc) {
 }
 
 func (g *Gfa) Run() {
-	config.Setup(g.cfgOpts...)
-
-	logger.Setup(parseLoggerConfig())
-
-	cache.Setup()
-
-	db.Setup()
-
-	nsdb.Setup()
-
-	if !logger.IsDebugLevelEnabled() {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	gin.DebugPrintFunc = func(format string, values ...interface{}) {
-		logger.Debugf(strings.TrimSpace(format), values...)
-	}
-	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
-		logger.Debugf("%s %s %s %d", httpMethod, absolutePath, handlerName, nuHandlers)
-	}
-
-	g.Engine = gin.New()
-	// recovery
-	g.Use(gin.Recovery())
-	// onerror
-	g.Use(middlewares.OnError())
-	// requestid
-	g.Use(request_id.RequestID())
-	// access log
-	g.Use(middlewares.AccessLog())
-	// custom middlewares
-	for _, mdw := range g.mdws {
-		g.Use(mdw)
-	}
-	// session
-	if session.Enabled() {
-		g.Use(session.Session())
-	}
-	// security
-	if security.Enabled() {
-		g.Use(security.Security())
-	}
-
-	basePath := config.GetString("server.base_path")
-	rootRouter := g.Group(basePath)
-	// swagger
-	swag.Setup(rootRouter)
-	// routes
-	for _, controller := range g.controllers {
-		controller.Setup(rootRouter)
-	}
 
 	addr := config.GetString("server.addr")
 
@@ -148,12 +101,64 @@ func WithMiddleware(mdws ...gin.HandlerFunc) {
 }
 
 func Default() *Gfa {
-	gfa = NewGfa()
+	printBanner()
+
+	config.Setup(gfa.cfgOpts...)
+
+	logger.Setup(parseLoggerConfig())
+
+	cache.Setup()
+
+	db.Setup()
+
+	nsdb.Setup()
+
+	if !logger.IsDebugLevelEnabled() {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	gin.DebugPrintFunc = func(format string, values ...interface{}) {
+		logger.Debugf(strings.TrimSpace(format), values...)
+	}
+	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+		logger.Debugf("%s %s %s %d", httpMethod, absolutePath, handlerName, nuHandlers)
+	}
+
+	gfa.Engine = gin.New(gfa.ginOpts...)
+	// recovery
+	gfa.Use(gin.Recovery())
+	// onerror
+	gfa.Use(middlewares.OnError())
+	// requestid
+	gfa.Use(request_id.RequestID())
+	// access log
+	gfa.Use(middlewares.AccessLog())
+	// custom middlewares
+	for _, mdw := range gfa.mdws {
+		gfa.Use(mdw)
+	}
+	// session
+	if session.Enabled() {
+		gfa.Use(session.Session())
+	}
+	// security
+	if security.Enabled() {
+		gfa.Use(security.Security())
+	}
+
+	basePath := config.GetString("server.base_path")
+	rootRouter := gfa.Group(basePath)
+	// swagger
+	swag.Setup(rootRouter)
+	// routes
+	for _, controller := range gfa.controllers {
+		controller.Setup(rootRouter)
+	}
+
 	return &gfa
 }
 
 func Run() {
-	printBanner()
 	gfa.Run()
 }
 
