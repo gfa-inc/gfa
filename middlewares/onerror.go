@@ -18,6 +18,7 @@ func OnError() gin.HandlerFunc {
 			return
 		}
 
+		logger.Error(c.Errors.String())
 		for _, err := range c.Errors {
 			switch e := err.Err.(type) {
 			case *core.ParamErr:
@@ -27,6 +28,7 @@ func OnError() gin.HandlerFunc {
 			default:
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
+			return
 		}
 	}
 }
