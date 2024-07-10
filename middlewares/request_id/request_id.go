@@ -27,7 +27,7 @@ func RequestID() gin.HandlerFunc {
 
 	ContextKey = option.ContextKey
 
-	logger.Infof("Use requestid middleware, header key: %s", option.HeaderKey)
+	logger.Infof("Requestid middleware enabled, header key: %s", option.HeaderKey)
 	return requestid.New(
 		requestid.WithCustomHeaderStrKey(requestid.HeaderStrKey(option.HeaderKey)),
 		requestid.WithGenerator(func() string {

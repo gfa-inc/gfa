@@ -49,7 +49,7 @@ func Security() gin.HandlerFunc {
 	}
 
 	logger.Debugf("Enabled security validators: %s", strings.Join(maputil.Keys(validators), ", "))
-	logger.Info("Use security middleware")
+	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
 		if _, ok := permittedRoutes[c.FullPath()]; ok {

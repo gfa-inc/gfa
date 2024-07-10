@@ -9,7 +9,7 @@ import (
 )
 
 func OnError() gin.HandlerFunc {
-	logger.Info("Use onerror middleware")
+	logger.Info("Onerror middleware enabled")
 	return func(c *gin.Context) {
 		c.Next()
 

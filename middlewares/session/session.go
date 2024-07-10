@@ -56,7 +56,7 @@ func Session() gin.HandlerFunc {
 		Domain:   option.Domain,
 	})
 
-	logger.Info("Use session middleware")
+	logger.Info("Session middleware enabled")
 	return sessions.Sessions("_SESSIONID", newRedisStore)
 }
 

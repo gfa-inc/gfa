@@ -8,7 +8,7 @@ import (
 )
 
 func AccessLog() gin.HandlerFunc {
-	logger.Info("Use access log middleware")
+	logger.Info("Access log middleware enabled")
 	return func(c *gin.Context) {
 		start := time.Now()
 		// request path
