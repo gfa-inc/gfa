@@ -48,10 +48,6 @@ func Security() gin.HandlerFunc {
 		validators["api_key"] = newApiKeyValidator()
 	}
 
-	if len(validators) == 0 {
-		validators["jwt"] = &JwtValidator{}
-	}
-
 	logger.Debugf("Enabled security validators: %s", strings.Join(maputil.Keys(validators), ", "))
 	logger.Info("Use security middleware")
 
@@ -67,6 +63,8 @@ func Security() gin.HandlerFunc {
 				return
 			}
 		}
+
+		logger.Infof("Unauthorized access: %s", c.FullPath())
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
