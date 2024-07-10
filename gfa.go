@@ -93,7 +93,9 @@ func (g *Gfa) Run() {
 		g.Use(session.Session())
 	}
 	// security
-	g.Use(security.Security())
+	if security.Enabled() {
+		g.Use(security.Security())
+	}
 
 	basePath := config.GetString("server.base_path")
 	rootRouter := g.Group(basePath)

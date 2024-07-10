@@ -57,6 +57,11 @@ func Security() gin.HandlerFunc {
 			return
 		}
 
+		if validators == nil {
+			c.Next()
+			return
+		}
+
 		for _, v := range validators {
 			if v.Valid(c) == nil {
 				c.Next()
@@ -67,6 +72,10 @@ func Security() gin.HandlerFunc {
 		logger.Infof("Unauthorized access: %s", c.FullPath())
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
+}
+
+func Enabled() bool {
+	return config.Get("security") != nil
 }
 
 func PermitRoute(route string) {
