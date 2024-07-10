@@ -1,30 +1,37 @@
 package core
 
-type ParameterError struct {
+type ParamErr struct {
 	Message string
 }
 
-func (p *ParameterError) Error() string {
+func (p *ParamErr) Error() string {
 	return p.Message
 }
 
-func NewParameterError(message string) *ParameterError {
-	return &ParameterError{
+func NewParamErr(data any) *ParamErr {
+	var message string
+	switch msg := data.(type) {
+	case string:
+		message = msg
+	case error:
+		message = msg.Error()
+	}
+	return &ParamErr{
 		Message: message,
 	}
 }
 
-type BizError struct {
+type BizErr struct {
 	Code    string
 	Message string
 }
 
-func (b *BizError) Error() string {
+func (b *BizErr) Error() string {
 	return b.Message
 }
 
-func NewBizError(code, message string) *BizError {
-	return &BizError{
+func NewBizErr(code, message string) *BizErr {
+	return &BizErr{
 		Code:    code,
 		Message: message,
 	}
