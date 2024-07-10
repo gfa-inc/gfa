@@ -145,8 +145,9 @@ func WithMiddleware(mdws ...gin.HandlerFunc) {
 	gfa.WithMiddleware(mdws...)
 }
 
-func Default() {
+func Default() *Gfa {
 	gfa = NewGfa()
+	return &gfa
 }
 
 func Run() {
