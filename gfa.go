@@ -9,6 +9,7 @@ import (
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/common/nsdb"
 	"github.com/gfa-inc/gfa/common/swag"
+	"github.com/gfa-inc/gfa/common/validator"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares"
 	"github.com/gfa-inc/gfa/middlewares/request_id"
@@ -112,6 +113,8 @@ func Default() *Gfa {
 	db.Setup()
 
 	nsdb.Setup()
+
+	validator.Setup()
 
 	if !logger.IsDebugLevelEnabled() {
 		gin.SetMode(gin.ReleaseMode)
