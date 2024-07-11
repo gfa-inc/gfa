@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,32 +22,36 @@ type PaginatedData struct {
 	Total int64       `json:"total"`
 }
 
-func NewSucceedResponse(data interface{}) Response {
+func NewSucceedResponse(c context.Context, data interface{}) Response {
+	traceID, _ := c.Value(request_id.ContextKey).(string)
 	return Response{
 		Success: true,
 		Code:    "0",
 		Message: "",
 		Data:    data,
+		TraceID: traceID,
 	}
 }
 
-func NewFailedResponse(code string, message string) Response {
+func NewFailedResponse(c context.Context, code string, message string) Response {
+	traceID, _ := c.Value(request_id.ContextKey).(string)
 	return Response{
 		Success: false,
 		Code:    code,
 		Message: message,
 		Data:    nil,
+		TraceID: traceID,
 	}
 }
 
 // OK returns processing result successfully
 func OK(c *gin.Context, data interface{}) {
-	c.JSON(http.StatusOK, NewSucceedResponse(data))
+	c.JSON(http.StatusOK, NewSucceedResponse(c, data))
 }
 
 // Fail returns error code and message
 func Fail(c *gin.Context, code string, message string) {
-	c.JSON(http.StatusServiceUnavailable, NewFailedResponse(code, message))
+	c.JSON(http.StatusServiceUnavailable, NewFailedResponse(c, code, message))
 }
 
 // Paginated returns paginated data
