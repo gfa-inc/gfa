@@ -149,19 +149,19 @@ func Default() *Gfa {
 		gfa.Use(security.Security())
 	}
 
-	basePath := config.GetString("server.base_path")
-	rootRouter := gfa.Group(basePath)
-	// swagger
-	swag.Setup(rootRouter)
-	// routes
-	for _, controller := range gfa.controllers {
-		controller.Setup(rootRouter)
-	}
-
 	return &gfa
 }
 
 func Run() {
+	basePath := config.GetString("server.base_path")
+	rootRouter := gfa.Group(basePath)
+	// swagger
+	swag.Setup(rootRouter)
+	// custom routes
+	for _, controller := range gfa.controllers {
+		controller.Setup(rootRouter)
+	}
+
 	gfa.Run()
 }
 
