@@ -1,4 +1,4 @@
-package validator
+package validatorx
 
 import (
 	"github.com/gfa-inc/gfa/common/logger"
@@ -8,6 +8,8 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zhtrans "github.com/go-playground/validator/v10/translations/zh"
+	"reflect"
+	"strings"
 )
 
 var (
@@ -25,5 +27,19 @@ func Setup() {
 		if err != nil {
 			logger.Panic(err)
 		}
+
+		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+			tagValue := fld.Tag.Get("json")
+			if tagValue == "" {
+				tagValue = fld.Tag.Get("form")
+			}
+			name := strings.SplitN(tagValue, ",", 2)[0]
+
+			if name == "-" {
+				return ""
+			}
+
+			return name
+		})
 	}
 }

@@ -1,5 +1,10 @@
 package core
 
+import (
+	"github.com/gfa-inc/gfa/common/validatorx"
+	"github.com/go-playground/validator/v10"
+)
+
 type ParamErr struct {
 	Message string
 }
@@ -13,6 +18,11 @@ func NewParamErr(data any) *ParamErr {
 	switch msg := data.(type) {
 	case string:
 		message = msg
+	case validator.ValidationErrors:
+		for _, err := range msg {
+			message = err.Translate(validatorx.Trans)
+			break
+		}
 	case error:
 		message = msg.Error()
 	}
