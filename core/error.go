@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/gfa-inc/gfa/common/validatorx"
 	"github.com/go-playground/validator/v10"
 )
@@ -38,6 +39,11 @@ type BizErr struct {
 
 func (b *BizErr) Error() string {
 	return b.Message
+}
+
+func (b BizErr) WithField(vals ...any) BizErr {
+	b.Message = fmt.Sprintf(b.Message, vals...)
+	return b
 }
 
 func NewBizErr(code, message string) *BizErr {
