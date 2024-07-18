@@ -14,6 +14,11 @@ func (p *ParamErr) Error() string {
 	return p.Message
 }
 
+func (p ParamErr) WithField(val ...any) ParamErr {
+	p.Message = fmt.Sprintf(p.Message, val...)
+	return p
+}
+
 func NewParamErr(data any) *ParamErr {
 	var message string
 	switch msg := data.(type) {
