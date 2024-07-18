@@ -14,9 +14,9 @@ func (p *ParamErr) Error() string {
 	return p.Message
 }
 
-func (p ParamErr) WithField(val ...any) ParamErr {
+func (p ParamErr) WithField(val ...any) *ParamErr {
 	p.Message = fmt.Sprintf(p.Message, val...)
-	return p
+	return &p
 }
 
 func NewParamErr(data any) *ParamErr {
@@ -46,9 +46,9 @@ func (b *BizErr) Error() string {
 	return b.Message
 }
 
-func (b BizErr) WithField(vals ...any) BizErr {
+func (b BizErr) WithField(vals ...any) *BizErr {
 	b.Message = fmt.Sprintf(b.Message, vals...)
-	return b
+	return &b
 }
 
 func NewBizErr(code, message string) *BizErr {
