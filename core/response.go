@@ -10,19 +10,19 @@ import (
 
 // Response represents processing result
 type Response struct {
-	Success bool        `json:"success"`
-	Code    string      `json:"code"`
-	Message string      `json:"msg"`
-	Data    interface{} `json:"data"`
-	TraceID string      `json:"traceId,omitempty"`
+	Success bool   `json:"success"`
+	Code    string `json:"code"`
+	Message string `json:"msg"`
+	Data    any    `json:"data"`
+	TraceID string `json:"traceId,omitempty"`
 }
 
 type PaginatedData struct {
-	Data  interface{} `json:"list"`
-	Total int64       `json:"total"`
+	Data  any   `json:"list"`
+	Total int64 `json:"total"`
 }
 
-func NewSucceedResponse(c context.Context, data interface{}) Response {
+func NewSucceedResponse(c context.Context, data any) Response {
 	traceID, _ := c.Value(request_id.ContextKey).(string)
 	return Response{
 		Success: true,
@@ -45,7 +45,7 @@ func NewFailedResponse(c context.Context, code string, message string) Response 
 }
 
 // OK returns processing result successfully
-func OK(c *gin.Context, data interface{}) {
+func OK(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, NewSucceedResponse(c, data))
 }
 
@@ -55,6 +55,6 @@ func Fail(c *gin.Context, code string, message string) {
 }
 
 // Paginated returns paginated data
-func Paginated(data interface{}, total int64) PaginatedData {
+func Paginated(data any, total int64) PaginatedData {
 	return PaginatedData{data, total}
 }
