@@ -136,10 +136,6 @@ func Default() *Gfa {
 	gfa.Use(request_id.RequestID())
 	// access log
 	gfa.Use(middlewares.AccessLog())
-	// custom middlewares
-	for _, mdw := range gfa.mdws {
-		gfa.Use(mdw)
-	}
 	// session
 	if session.Enabled() {
 		gfa.Use(session.Session())
@@ -147,6 +143,10 @@ func Default() *Gfa {
 	// security
 	if security.Enabled() {
 		gfa.Use(security.Security())
+	}
+	// custom middlewares
+	for _, mdw := range gfa.mdws {
+		gfa.Use(mdw)
 	}
 
 	return &gfa
