@@ -26,7 +26,7 @@ func OnError() gin.HandlerFunc {
 			case *core.BizErr:
 				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(c, e.Code, e.Message))
 			default:
-				_ = c.AbortWithError(http.StatusInternalServerError, err)
+				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(c, "500", e.Error()))
 			}
 			return
 		}
