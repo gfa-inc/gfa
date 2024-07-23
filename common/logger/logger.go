@@ -57,11 +57,10 @@ func New(option Config) *Logger {
 	return l
 }
 
-func (l *Logger) Clone(level zapcore.Level) *Logger {
-	nl := *l
-	nl.level = level
-	nl.TraceIDKey = l.TraceIDKey
-	return &nl
+func (l Logger) Clone(level zapcore.Level) Logger {
+	l.level = level
+	l.TraceIDKey = l.TraceIDKey
+	return l
 }
 
 func (l *Logger) WithTraceID(ctx context.Context) *zap.SugaredLogger {
