@@ -1,6 +1,7 @@
 package gfa
 
 import (
+	"github.com/gfa-inc/gfa/common/db/mysqlx"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,7 @@ func (*testController) hello(c *gin.Context) {
 }
 
 func (tc *testController) Setup(r *gin.RouterGroup) {
+	mysqlx.Client.Exec("select 1")
 	PermitRoute("/hello")
 	r.GET("/hello", tc.hello)
 }

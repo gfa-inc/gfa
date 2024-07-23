@@ -28,8 +28,8 @@ var (
 )
 
 type Gfa struct {
-	*gin.Engine
-	mdws []gin.HandlerFunc
+	engine *gin.Engine
+	mdws   []gin.HandlerFunc
 
 	controllers []core.Controller
 	ginOpts     []gin.OptionFunc
@@ -62,7 +62,7 @@ func (g *Gfa) Run() {
 
 	addr := config.GetString("server.addr")
 
-	gracefulServer, err := graceful.New(g.Engine, graceful.WithAddr(addr))
+	gracefulServer, err := graceful.New(g.engine, graceful.WithAddr(addr))
 	if err != nil {
 		logger.Error(err)
 		return
@@ -127,26 +127,26 @@ func Default() *Gfa {
 		logger.Debugf("%s %s %s %d", httpMethod, absolutePath, handlerName, nuHandlers)
 	}
 
-	gfa.Engine = gin.New(gfa.ginOpts...)
+	gfa.engine = gin.New(gfa.ginOpts...)
 	// recovery
-	gfa.Use(gin.Recovery())
+	gfa.engine.Use(gin.Recovery())
 	// onerror
-	gfa.Use(middlewares.OnError())
+	gfa.engine.Use(middlewares.OnError())
 	// requestid
-	gfa.Use(request_id.RequestID())
+	gfa.engine.Use(request_id.RequestID())
 	// access log
-	gfa.Use(middlewares.AccessLog())
+	gfa.engine.Use(middlewares.AccessLog())
 	// session
 	if session.Enabled() {
-		gfa.Use(session.Session())
+		gfa.engine.Use(session.Session())
 	}
 	// security
 	if security.Enabled() {
-		gfa.Use(security.Security())
+		gfa.engine.Use(security.Security())
 	}
 	// custom middlewares
 	for _, mdw := range gfa.mdws {
-		gfa.Use(mdw)
+		gfa.engine.Use(mdw)
 	}
 
 	return &gfa
@@ -154,7 +154,7 @@ func Default() *Gfa {
 
 func Run() {
 	basePath := config.GetString("server.base_path")
-	rootRouter := gfa.Group(basePath)
+	rootRouter := gfa.engine.Group(basePath)
 	// swagger
 	swag.Setup(rootRouter)
 	// custom routes
