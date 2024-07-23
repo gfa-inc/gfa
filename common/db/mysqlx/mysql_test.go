@@ -11,8 +11,9 @@ func TestNewMysqlClient(t *testing.T) {
 	logger.Setup()
 	client, err := NewClient(Config{
 		DNS:   "gfa:123456@tcp(127.0.0.1:3306)/gfa?charset=utf8mb4&parseTime=True&loc=Local",
-		Level: "",
+		Level: "debug",
 	})
+	client.Debug().Exec("select 1")
 	assert.Nil(t, err)
 	assert.NotNil(t, client)
 }

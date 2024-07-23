@@ -111,7 +111,7 @@ func newGormLogger(config Config) *gormLogger {
 }
 
 type gormLogger struct {
-	*logger.Logger
+	logger.Logger
 }
 
 func (g *gormLogger) LogMode(logLevel glog.LogLevel) glog.Interface {
@@ -124,7 +124,7 @@ func (g *gormLogger) LogMode(logLevel glog.LogLevel) glog.Interface {
 	case glog.Info:
 		fallthrough
 	default:
-		level = zapcore.InfoLevel
+		level = zapcore.DebugLevel
 	}
 
 	ng := gormLogger{
@@ -145,5 +145,11 @@ func (g *gormLogger) Error(c context.Context, format string, args ...any) {
 	g.Errorf(c, format, args)
 }
 
-func (g *gormLogger) Trace(_ context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+func (g *gormLogger) Trace(c context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+	if !g.LevelEnabled("debug") {
+		return
+	}
+	sqlContent, rowsAffected := fc()
+	elapsed := time.Since(begin)
+	g.Debugf(c, "[%dms] [rows:%d] %s", elapsed.Milliseconds(), rowsAffected, sqlContent)
 }
