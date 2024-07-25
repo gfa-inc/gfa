@@ -25,6 +25,7 @@ func Setup(r *gin.RouterGroup) {
 	}
 	info.Host = config.GetString("server.addr")
 	info.BasePath = config.GetString("server.base_path")
+	info.Version = "1.0.0"
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(
 		swaggerfiles.Handler,

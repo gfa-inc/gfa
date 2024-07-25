@@ -32,7 +32,7 @@ func newJwtValidator() *JwtValidator {
 }
 
 func newApiKeyValidator() *ApiKeyValidator {
-	config.SetDefault("security.api_key.header_key", "X-API-KEY")
+	config.SetDefault("security.api_key.header_key", "X-Api-Key")
 	headerKey := config.GetString("security.api_key.header_key")
 	return NewApiKeyValidator(headerKey)
 }
