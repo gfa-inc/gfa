@@ -19,14 +19,6 @@ func Setup(r *gin.RouterGroup) {
 		return
 	}
 
-	info := swagger.(*swag.Spec)
-	if config.GetString("name") != "" {
-		info.Title = config.GetString("name")
-	}
-	info.Host = config.GetString("server.addr")
-	info.BasePath = config.GetString("server.base_path")
-	info.Version = "1.0.0"
-
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(
 		swaggerfiles.Handler,
 		ginSwagger.PersistAuthorization(true)))
