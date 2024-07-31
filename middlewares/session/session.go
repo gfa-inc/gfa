@@ -1,6 +1,7 @@
 package session
 
 import (
+	"github.com/boj/redistore"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gin-contrib/sessions"
@@ -55,6 +56,11 @@ func Session() gin.HandlerFunc {
 		MaxAge:   option.MaxAge,
 		Domain:   option.Domain,
 	})
+
+	_, store := redis.GetRedisStore(newRedisStore)
+	store.SetMaxLength(1024 * 1024)
+	store.SetKeyPrefix(config.GetString("name"))
+	store.SetSerializer(redistore.JSONSerializer{})
 
 	logger.Info("Session middleware enabled")
 	return sessions.Sessions("_SESSIONID", newRedisStore)
