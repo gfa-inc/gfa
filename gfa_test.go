@@ -4,6 +4,8 @@ import (
 	"github.com/gfa-inc/gfa/common/db/mysqlx"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/core"
+	"github.com/gfa-inc/gfa/middlewares/security"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"testing"
 )
@@ -20,6 +22,15 @@ func (*testController) hello(c *gin.Context) {
 	if err := c.ShouldBindQuery(&q); err != nil {
 		logger.TError(c.Copy(), err)
 		_ = c.Error(core.NewParamErr(err))
+		return
+	}
+
+	session := sessions.Default(c)
+	session.Set(security.SessionKey, q)
+	err := session.Save()
+	if err != nil {
+		logger.TError(c, err)
+		_ = c.Error(err)
 		return
 	}
 
