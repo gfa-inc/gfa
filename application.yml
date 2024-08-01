@@ -1,5 +1,5 @@
 server:
-  addr: "127.0.0.1:8080"
+  addr: "127.0.0.1:8888"
   base_path: "/api/v1"
 logger:
   level: debug
@@ -7,6 +7,7 @@ mysql:
   default:
     dns: "gfa:123456@tcp(127.0.0.1:3306)/gfa?charset=utf8mb4&parseTime=True&loc=Local"
     default: true
+    level: "debug"
 elastic:
   default:
     addrs:
