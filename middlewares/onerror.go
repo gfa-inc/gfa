@@ -29,6 +29,8 @@ func OnError() gin.HandlerFunc {
 			case *core.AuthErr:
 				c.AbortWithStatusJSON(http.StatusForbidden,
 					core.NewFailedResponse(c, strconv.Itoa(http.StatusForbidden), e.Error()))
+			case *core.UnauthorizedErr:
+				c.AbortWithStatus(http.StatusUnauthorized)
 			default:
 				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(c, "500", e.Error()))
 			}

@@ -71,3 +71,14 @@ func NewAuthErr(message string) *AuthErr {
 		Message: message,
 	}
 }
+
+type UnauthorizedErr struct {
+}
+
+func (u *UnauthorizedErr) Error() string {
+	return "Unauthorized"
+}
+
+func NewUnauthorizedErr() *UnauthorizedErr {
+	return &UnauthorizedErr{}
+}
