@@ -53,6 +53,7 @@ func Security() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		if _, ok := permittedRoutes[c.FullPath()]; ok {
+			c.Set("permitted", true)
 			c.Next()
 			return
 		}
