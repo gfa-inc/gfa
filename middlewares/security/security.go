@@ -63,8 +63,9 @@ func Security() gin.HandlerFunc {
 			return
 		}
 
-		for _, v := range validators {
+		for k, v := range validators {
 			if v.Valid(c) == nil {
+				c.Set("security", k)
 				c.Next()
 				return
 			}
