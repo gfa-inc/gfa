@@ -22,9 +22,13 @@ func OnError() gin.HandlerFunc {
 		for _, err := range c.Errors {
 			switch e := err.Err.(type) {
 			case *core.ParamErr:
-				c.AbortWithStatusJSON(http.StatusBadRequest, core.NewFailedResponse(c, strconv.Itoa(http.StatusBadRequest), e.Error()))
+				c.AbortWithStatusJSON(http.StatusBadRequest,
+					core.NewFailedResponse(c, strconv.Itoa(http.StatusBadRequest), e.Error()))
 			case *core.BizErr:
 				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(c, e.Code, e.Message))
+			case *core.AuthErr:
+				c.AbortWithStatusJSON(http.StatusForbidden,
+					core.NewFailedResponse(c, strconv.Itoa(http.StatusForbidden), e.Error()))
 			default:
 				c.AbortWithStatusJSON(http.StatusOK, core.NewFailedResponse(c, "500", e.Error()))
 			}

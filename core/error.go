@@ -57,3 +57,19 @@ func NewBizErr(code, message string) *BizErr {
 		Message: message,
 	}
 }
+
+type AuthErr struct {
+	Code    string
+	Message string
+}
+
+func (a *AuthErr) Error() string {
+	return a.Message
+}
+
+func NewAuthErr(code, message string) *AuthErr {
+	return &AuthErr{
+		Code:    code,
+		Message: message,
+	}
+}
