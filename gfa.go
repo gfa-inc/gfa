@@ -3,6 +3,7 @@ package gfa
 import (
 	"context"
 	"errors"
+	"github.com/gfa-inc/gfa/common/aws"
 	"github.com/gfa-inc/gfa/common/cache"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/db"
@@ -115,6 +116,8 @@ func Default() *Gfa {
 	nsdb.Setup()
 
 	validatorx.Setup()
+
+	aws.Setup()
 
 	if !logger.IsDebugLevelEnabled() {
 		gin.SetMode(gin.ReleaseMode)
