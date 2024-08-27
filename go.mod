@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.60.1
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/duke-git/lancet/v2 v2.3.1
+	github.com/duke-git/lancet/v2 v2.3.2
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gin-contrib/graceful v1.0.2
 	github.com/gin-contrib/requestid v1.0.2
@@ -115,3 +115,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/gin-contrib/sessions => github.com/gfa-inc/sessions v1.0.2
