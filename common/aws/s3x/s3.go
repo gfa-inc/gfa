@@ -6,8 +6,10 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"strings"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 )
 
 type Config struct {
+	Name     string
 	Endpoint string
 	AK       string
 	SK       string
@@ -41,6 +44,7 @@ func NewS3Client(option Config) (*s3.Client, error) {
 		return nil, err
 	}
 	client := s3.NewFromConfig(cfg)
+	logger.Debugf("Connecting to s3 [%s] %s", option.Name, option.Bucket)
 	return client, nil
 }
 
@@ -59,6 +63,7 @@ func Setup() {
 		return
 	}
 
+	logger.Infof("Starting to initialize aws s3 client pool")
 	for k, v := range configMap {
 		client, err := NewS3Client(v)
 		if err != nil {
@@ -71,6 +76,9 @@ func Setup() {
 			Client = client
 		}
 	}
+
+	logger.Infof("Aws s3 client pool has been initialized with %d clients, clients: %s",
+		len(clientPool), strings.Join(maputil.Keys(clientPool), ", "))
 }
 
 func GetClient(name string) *s3.Client {
