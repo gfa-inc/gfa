@@ -3,6 +3,7 @@ package kafkax
 import (
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/utils/ptr"
 	"github.com/segmentio/kafka-go"
 	"log"
 )
@@ -34,7 +35,7 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 		Topic:       option.Topic,
 		GroupID:     option.GroupID,
 		Partition:   option.Partition,
-		Logger:      kafka.LoggerFunc(logger.Infof),
+		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 	})
 
@@ -44,15 +45,20 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 type ProducerConfig struct {
 	Brokers []string
 	Topic   string
+	Async   *bool
 }
 
 func NewProducerClient(option ProducerConfig) *kafka.Writer {
+	if option.Async == nil {
+		option.Async = ptr.ToBool(true)
+	}
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		Balancer:    &kafka.LeastBytes{},
-		Logger:      kafka.LoggerFunc(logger.Infof),
+		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
+		Async:       *option.Async,
 	})
 
 	return writer

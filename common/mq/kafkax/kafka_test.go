@@ -10,13 +10,18 @@ import (
 )
 
 func TestSetup(t *testing.T) {
-	config.Setup(config.WithPath("../../../../"))
+	config.Setup(config.WithPath("../../../"))
 	logger.Setup()
 	Setup()
 	assert.NotNil(t, ConsumerClient)
 	assert.NotNil(t, ProducerClient)
 	assert.Greater(t, len(consumerClientPool), 0)
 	assert.Greater(t, len(producerClientPool), 0)
+
+	err := ProducerClient.WriteMessages(context.Background(), kafka.Message{
+		Value: []byte("test setup"),
+	})
+	assert.Nil(t, err)
 }
 
 func TestDial(t *testing.T) {
