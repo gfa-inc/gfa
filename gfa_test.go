@@ -49,26 +49,32 @@ func (tc *testController) Setup(r *gin.RouterGroup) {
 }
 
 func TestRun(t *testing.T) {
-	logger.RegisterCore("json", logger.NewJsonCore(logger.NewJsonCoreWriter(func(b []byte) (int, error) {
-		if kafkax.ProducerClient == nil {
-			return 0, nil
-		}
+	logger.RegisterCore("json", logger.NewJsonCore(logger.NewJsonCoreOption{
+		Writer: logger.NewJsonCoreWriter(func(b []byte) (int, error) {
+			if kafkax.ProducerClient == nil {
+				return 0, nil
+			}
 
-		msg := make([]byte, len(b))
-		copy(msg, b)
-		err := kafkax.ProducerClient.WriteMessages(context.Background(), kafka.Message{
-			Value: msg,
-		})
-		if err != nil {
-			return 0, err
-		}
+			msg := make([]byte, len(b))
+			copy(msg, b)
+			err := kafkax.ProducerClient.WriteMessages(context.Background(), kafka.Message{
+				Value: msg,
+			})
+			if err != nil {
+				return 0, err
+			}
 
-		return len(b), nil
-	}), logger.ToLevelPtr(zapcore.InfoLevel), func(cfg *zapcore.EncoderConfig) {
-		cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05Z0700")
-		cfg.TimeKey = "timestamp"
-		cfg.MessageKey = "message"
-		cfg.CallerKey = "logger"
+			return len(b), nil
+		}),
+		Level: logger.ToLevelPtr(zapcore.InfoLevel),
+		Opts: []logger.JsonCoreEncoderConfigFunc{
+			func(cfg *zapcore.EncoderConfig) {
+				cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05Z0700")
+				cfg.TimeKey = "timestamp"
+				cfg.MessageKey = "message"
+				cfg.CallerKey = "logger"
+			},
+		},
 	}))
 
 	Default()

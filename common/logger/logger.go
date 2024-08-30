@@ -233,27 +233,37 @@ func ToLevelPtr(level zapcore.Level) *zapcore.Level {
 	return &level
 }
 
-type JsonCoreOptionFunc func(cfg *zapcore.EncoderConfig)
+type JsonCoreEncoderConfigFunc func(cfg *zapcore.EncoderConfig)
 
-func NewJsonCore(writer zapcore.WriteSyncer, level *zapcore.Level, opts ...JsonCoreOptionFunc) func(option Config) zapcore.Core {
+type NewJsonCoreOption struct {
+	Writer zapcore.WriteSyncer
+	Level  *zapcore.Level
+	Opts   []JsonCoreEncoderConfigFunc
+	Fields []zapcore.Field
+}
+
+func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
 	cfg := zap.NewProductionEncoderConfig()
-	for _, opt := range opts {
+	for _, opt := range option.Opts {
 		opt(&cfg)
 	}
 	jsonEncoder := zapcore.NewJSONEncoder(cfg)
+	for _, field := range option.Fields {
+		field.AddTo(jsonEncoder)
+	}
 
-	jsonSync := zapcore.AddSync(writer)
+	jsonSync := zapcore.AddSync(option.Writer)
 
-	return func(option Config) zapcore.Core {
-		if level == nil {
-			l, err := zapcore.ParseLevel(option.Level)
+	return func(c Config) zapcore.Core {
+		if option.Level == nil {
+			l, err := zapcore.ParseLevel(c.Level)
 			if err != nil {
 				log.Fatal(err)
 			}
-			level = &l
+			option.Level = &l
 		}
 
-		return zapcore.NewCore(jsonEncoder, jsonSync, level)
+		return zapcore.NewCore(jsonEncoder, jsonSync, option.Level)
 	}
 }
 
