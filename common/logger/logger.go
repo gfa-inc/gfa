@@ -57,10 +57,11 @@ func New(option Config) *Logger {
 	return l
 }
 
-func (l Logger) Clone(level zapcore.Level) Logger {
-	l.level = level
-	l.TraceIDKey = l.TraceIDKey
-	return l
+func (l *Logger) Clone(level zapcore.Level) Logger {
+	cloned := *l
+	cloned.level = level
+	cloned.TraceIDKey = l.TraceIDKey
+	return cloned
 }
 
 func (l *Logger) WithTraceID(ctx context.Context) *zap.SugaredLogger {
@@ -210,6 +211,42 @@ func consoleCoreFactory(option Config) zapcore.Core {
 		log.Fatal(err)
 	}
 	return zapcore.NewCore(consoleEncoder, consoleSync, level)
+}
+
+type JsonCoreWriter struct {
+	writeFunc func(b []byte) (int, error)
+}
+
+func NewJsonCoreWriter(writeFunc func(b []byte) (int, error)) *JsonCoreWriter {
+	return &JsonCoreWriter{writeFunc: writeFunc}
+}
+
+func (w *JsonCoreWriter) Write(b []byte) (int, error) {
+	return w.writeFunc(b)
+}
+
+func (w *JsonCoreWriter) Sync() error {
+	return nil
+}
+
+type JsonCoreOptionFunc func(cfg *zapcore.EncoderConfig)
+
+func NewJsonCore(writer zapcore.WriteSyncer, opts ...JsonCoreOptionFunc) func(option Config) zapcore.Core {
+	cfg := zap.NewProductionEncoderConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	jsonEncoder := zapcore.NewJSONEncoder(cfg)
+
+	jsonSync := zapcore.AddSync(writer)
+
+	return func(option Config) zapcore.Core {
+		level, err := zapcore.ParseLevel(option.Level)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return zapcore.NewCore(jsonEncoder, jsonSync, level)
+	}
 }
 
 func init() {
