@@ -239,7 +239,7 @@ type NewJsonCoreOption struct {
 	Writer zapcore.WriteSyncer
 	Level  *zapcore.Level
 	Opts   []JsonCoreEncoderConfigFunc
-	Fields []zapcore.Field
+	Fields func() []zapcore.Field
 }
 
 func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
@@ -248,9 +248,6 @@ func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
 		opt(&cfg)
 	}
 	jsonEncoder := zapcore.NewJSONEncoder(cfg)
-	for _, field := range option.Fields {
-		field.AddTo(jsonEncoder)
-	}
 
 	jsonSync := zapcore.AddSync(option.Writer)
 
@@ -261,6 +258,12 @@ func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
 				log.Fatal(err)
 			}
 			option.Level = &l
+		}
+
+		if option.Fields != nil {
+			for _, field := range option.Fields() {
+				field.AddTo(jsonEncoder)
+			}
 		}
 
 		return zapcore.NewCore(jsonEncoder, jsonSync, option.Level)
