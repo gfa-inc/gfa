@@ -35,7 +35,6 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 		Topic:       option.Topic,
 		GroupID:     option.GroupID,
 		Partition:   option.Partition,
-		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 	})
 
@@ -56,7 +55,6 @@ func NewProducerClient(option ProducerConfig) *kafka.Writer {
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		Balancer:    &kafka.LeastBytes{},
-		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 		Async:       *option.Async,
 	})
