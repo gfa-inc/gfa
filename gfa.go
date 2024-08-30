@@ -8,6 +8,7 @@ import (
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/db"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/common/mq"
 	"github.com/gfa-inc/gfa/common/nsdb"
 	"github.com/gfa-inc/gfa/common/swag"
 	"github.com/gfa-inc/gfa/common/validatorx"
@@ -114,6 +115,8 @@ func Default() *Gfa {
 	db.Setup()
 
 	nsdb.Setup()
+
+	mq.Setup()
 
 	validatorx.Setup()
 
