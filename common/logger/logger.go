@@ -229,9 +229,13 @@ func (w *JsonCoreWriter) Sync() error {
 	return nil
 }
 
+func ToLevelPtr(level zapcore.Level) *zapcore.Level {
+	return &level
+}
+
 type JsonCoreOptionFunc func(cfg *zapcore.EncoderConfig)
 
-func NewJsonCore(writer zapcore.WriteSyncer, opts ...JsonCoreOptionFunc) func(option Config) zapcore.Core {
+func NewJsonCore(writer zapcore.WriteSyncer, level *zapcore.Level, opts ...JsonCoreOptionFunc) func(option Config) zapcore.Core {
 	cfg := zap.NewProductionEncoderConfig()
 	for _, opt := range opts {
 		opt(&cfg)
@@ -241,10 +245,14 @@ func NewJsonCore(writer zapcore.WriteSyncer, opts ...JsonCoreOptionFunc) func(op
 	jsonSync := zapcore.AddSync(writer)
 
 	return func(option Config) zapcore.Core {
-		level, err := zapcore.ParseLevel(option.Level)
-		if err != nil {
-			log.Fatal(err)
+		if level == nil {
+			l, err := zapcore.ParseLevel(option.Level)
+			if err != nil {
+				log.Fatal(err)
+			}
+			level = &l
 		}
+
 		return zapcore.NewCore(jsonEncoder, jsonSync, level)
 	}
 }

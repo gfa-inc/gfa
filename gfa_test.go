@@ -64,7 +64,7 @@ func TestRun(t *testing.T) {
 		}
 
 		return len(b), nil
-	}), func(cfg *zapcore.EncoderConfig) {
+	}), logger.ToLevelPtr(zapcore.InfoLevel), func(cfg *zapcore.EncoderConfig) {
 		cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05Z0700")
 		cfg.TimeKey = "timestamp"
 		cfg.MessageKey = "message"
