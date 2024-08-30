@@ -122,3 +122,13 @@ func GetProducerClient(name string) *kafka.Writer {
 func PutProducerClient(name string, client *kafka.Writer) {
 	producerClientPool[name] = client
 }
+
+func HasConsumerClient(name string) bool {
+	_, ok := consumerClientPool[name]
+	return ok
+}
+
+func HasProducerClient(name string) bool {
+	_, ok := producerClientPool[name]
+	return ok
+}
