@@ -266,7 +266,9 @@ func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
 			}
 		}
 
-		return zapcore.NewCore(jsonEncoder, jsonSync, option.Level)
+		return zapcore.NewCore(jsonEncoder, jsonSync, zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+			return level == *option.Level
+		}))
 	}
 }
 
