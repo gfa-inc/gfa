@@ -236,10 +236,11 @@ func ToLevelPtr(level zapcore.Level) *zapcore.Level {
 type JsonCoreEncoderConfigFunc func(cfg *zapcore.EncoderConfig)
 
 type NewJsonCoreOption struct {
-	Writer zapcore.WriteSyncer
-	Level  *zapcore.Level
-	Opts   []JsonCoreEncoderConfigFunc
-	Fields func() []zapcore.Field
+	Writer       zapcore.WriteSyncer
+	Level        *zapcore.Level
+	LevelEnabler zapcore.LevelEnabler
+	Opts         []JsonCoreEncoderConfigFunc
+	Fields       func() []zapcore.Field
 }
 
 func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
@@ -260,15 +261,20 @@ func NewJsonCore(option NewJsonCoreOption) func(option Config) zapcore.Core {
 			option.Level = &l
 		}
 
+		if option.LevelEnabler == nil {
+			levelEnabler := zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+				return level == *option.Level
+			})
+			option.LevelEnabler = levelEnabler
+		}
+
 		if option.Fields != nil {
 			for _, field := range option.Fields() {
 				field.AddTo(jsonEncoder)
 			}
 		}
 
-		return zapcore.NewCore(jsonEncoder, jsonSync, zap.LevelEnablerFunc(func(level zapcore.Level) bool {
-			return level == *option.Level
-		}))
+		return zapcore.NewCore(jsonEncoder, jsonSync, option.LevelEnabler)
 	}
 }
 
