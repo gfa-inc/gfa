@@ -4,6 +4,7 @@ import (
 	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
@@ -13,14 +14,15 @@ type Validator interface {
 	Valid(c *gin.Context) error
 }
 
+const PermittedFlag = "permitted"
+
 var (
-	validators      map[string]Validator
-	permittedRoutes map[string]struct{}
+	validators map[string]Validator
+	matcher    *router.Matcher
 )
 
 func init() {
 	validators = make(map[string]Validator)
-	permittedRoutes = make(map[string]struct{})
 }
 
 func newSessionValidator() *SessionValidator {
@@ -38,6 +40,8 @@ func newApiKeyValidator() *ApiKeyValidator {
 }
 
 func Security() gin.HandlerFunc {
+	matcher = router.New()
+
 	if config.Get("security.session") != nil {
 		validators["session"] = newSessionValidator()
 	}
@@ -52,8 +56,8 @@ func Security() gin.HandlerFunc {
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
-		if _, ok := permittedRoutes[c.FullPath()]; ok {
-			c.Set("permitted", true)
+		if matcher.Match(c.FullPath()) {
+			c.Set(PermittedFlag, true)
 			c.Next()
 			return
 		}
@@ -71,7 +75,8 @@ func Security() gin.HandlerFunc {
 			}
 		}
 
-		logger.Infof("Unauthorized access: %s", c.FullPath())
+		logger.Errorf("Unauthorized access: %s", c.FullPath())
+
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 }
@@ -87,11 +92,15 @@ func PermitRoute(route string) {
 	}
 
 	logger.Debugf("Permit route %s", route)
-	permittedRoutes[route] = struct{}{}
+	matcher.AddRoute(route)
 }
 
 func PermitRoutes(routes []string) {
 	for _, route := range routes {
 		PermitRoute(route)
 	}
+}
+
+func IsPermitted(c *gin.Context) bool {
+	return c.GetBool(PermittedFlag)
 }
