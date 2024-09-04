@@ -3,6 +3,8 @@ server:
   base_path: "/api/v1"
 logger:
   level: debug
+  ctx_key_mapping:
+    "clientIP": "clientIP"
 mysql:
   default:
     dns: "gfa:123456@tcp(127.0.0.1:3306)/gfa?charset=utf8mb4&parseTime=True&loc=Local"
