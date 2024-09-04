@@ -14,7 +14,10 @@ type Validator interface {
 	Valid(c *gin.Context) error
 }
 
-const PermittedFlag = "permitted"
+const (
+	PermittedFlag = "permitted"
+	Type          = "security"
+)
 
 var (
 	validators map[string]Validator
@@ -69,7 +72,7 @@ func Security() gin.HandlerFunc {
 
 		for k, v := range validators {
 			if v.Valid(c) == nil {
-				c.Set("security", k)
+				c.Set(Type, k)
 				c.Next()
 				return
 			}
