@@ -21,31 +21,29 @@ var (
 type coreFactory func(option Config) zapcore.Core
 
 type Config struct {
-	ServiceName string
-	Level       string
-	TraceIDKey  string
+	ServiceName   string            // service name
+	Level         string            // logger level
+	CtxKeys       []string          // context key which will be logged from context
+	CtxKeyMapping map[string]string // context key mapping
 }
 
 type Logger struct {
-	inner      *zap.SugaredLogger
-	level      zapcore.Level
-	TraceIDKey string
+	inner         *zap.SugaredLogger
+	level         zapcore.Level
+	CtxKeys       []string
+	CtxKeyMapping map[string]string
 }
 
 func New(option Config) *Logger {
-	traceIDKey := option.TraceIDKey
-	if traceIDKey == "" {
-		traceIDKey = "traceID"
-	}
-
 	level, err := zapcore.ParseLevel(option.Level)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	l := &Logger{
-		TraceIDKey: traceIDKey,
-		level:      level,
+		level:         level,
+		CtxKeys:       option.CtxKeys,
+		CtxKeyMapping: option.CtxKeyMapping,
 	}
 	core := zapcore.NewTee(slice.Map(maputil.Entries(coreMap), func(_ int, entry maputil.Entry[string, coreFactory]) zapcore.Core {
 		return entry.Value(option)
@@ -57,110 +55,129 @@ func New(option Config) *Logger {
 	return l
 }
 
+func (l *Logger) AddContextKey(key string) {
+	l.CtxKeys = append(l.CtxKeys, key)
+}
+
 func (l *Logger) Clone(level zapcore.Level) Logger {
 	cloned := *l
 	cloned.level = level
-	cloned.TraceIDKey = l.TraceIDKey
+	cloned.CtxKeys = l.CtxKeys
+	cloned.CtxKeyMapping = l.CtxKeyMapping
 	return cloned
 }
 
-func (l *Logger) WithTraceID(ctx context.Context) *zap.SugaredLogger {
+func (l *Logger) getKeyName(key string) string {
+	if l.CtxKeyMapping != nil {
+		if v, ok := l.CtxKeyMapping[key]; ok {
+			return v
+		}
+	}
+
+	return key
+}
+
+func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 	if ctx == nil {
 		return l.inner
 	}
-	traceID := ctx.Value(l.TraceIDKey)
-	if traceID == nil {
-		return l.inner
+
+	newLogger := l.inner
+	for _, v := range l.CtxKeys {
+		if val := ctx.Value(v); val != nil {
+			newLogger = newLogger.With(l.getKeyName(v), val)
+		}
 	}
-	return l.inner.With(l.TraceIDKey, traceID)
+
+	return newLogger
 }
 
 func (l *Logger) Printf(ctx context.Context, format string, args ...any) {
-	l.WithTraceID(ctx).Infof(format, args...)
+	l.WithContext(ctx).Infof(format, args...)
 }
 
 func (l *Logger) Info(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.InfoLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Infoln(args...)
+	l.WithContext(ctx).Infoln(args...)
 }
 
 func (l *Logger) Infof(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.InfoLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Infof(format, args...)
+	l.WithContext(ctx).Infof(format, args...)
 }
 
 func (l *Logger) Warn(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.WarnLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Warnln(args...)
+	l.WithContext(ctx).Warnln(args...)
 }
 
 func (l *Logger) Warnf(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.WarnLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Warnf(format, args...)
+	l.WithContext(ctx).Warnf(format, args...)
 }
 
 func (l *Logger) Error(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.ErrorLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Errorln(args...)
+	l.WithContext(ctx).Errorln(args...)
 }
 
 func (l *Logger) Errorf(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.ErrorLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Errorf(format, args...)
+	l.WithContext(ctx).Errorf(format, args...)
 }
 
 func (l *Logger) Debug(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.DebugLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Debugln(args...)
+	l.WithContext(ctx).Debugln(args...)
 }
 
 func (l *Logger) Debugf(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.DebugLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Debugf(format, args...)
+	l.WithContext(ctx).Debugf(format, args...)
 }
 
 func (l *Logger) Fatal(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.FatalLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Fatal(args...)
+	l.WithContext(ctx).Fatal(args...)
 }
 
 func (l *Logger) Fatalf(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.FatalLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Fatalf(format, args...)
+	l.WithContext(ctx).Fatalf(format, args...)
 }
 
 func (l *Logger) Panic(ctx context.Context, args ...any) {
 	if !l.level.Enabled(zapcore.PanicLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Panic(args...)
+	l.WithContext(ctx).Panic(args...)
 }
 
 func (l *Logger) Panicf(ctx context.Context, format string, args ...any) {
 	if !l.level.Enabled(zapcore.PanicLevel) {
 		return
 	}
-	l.WithTraceID(ctx).Panicf(format, args...)
+	l.WithContext(ctx).Panicf(format, args...)
 }
 
 func (l *Logger) LevelEnabled(levelText string) bool {
@@ -423,4 +440,10 @@ func GetGlobalLogger() *Logger {
 
 func IsDebugLevelEnabled() bool {
 	return globalLogger.inner.Level().Enabled(zap.DebugLevel)
+}
+
+func AddContextKey(key string) {
+	if globalLogger != nil {
+		globalLogger.AddContextKey(key)
+	}
 }
