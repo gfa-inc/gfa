@@ -14,6 +14,7 @@ import (
 	"github.com/gfa-inc/gfa/common/validatorx"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares"
+	"github.com/gfa-inc/gfa/middlewares/access_log"
 	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"github.com/gfa-inc/gfa/middlewares/security"
 	"github.com/gfa-inc/gfa/middlewares/session"
@@ -104,9 +105,9 @@ func WithMiddleware(mdws ...gin.HandlerFunc) {
 }
 
 func Default() *Gfa {
-	printBanner()
-
 	config.Setup(gfa.cfgOpts...)
+
+	printBanner()
 
 	logger.Setup(parseLoggerConfig())
 
@@ -141,7 +142,7 @@ func Default() *Gfa {
 	// requestid
 	gfa.engine.Use(request_id.RequestID())
 	// access log
-	gfa.engine.Use(middlewares.AccessLog())
+	gfa.engine.Use(access_log.AccessLog())
 	// session
 	if session.Enabled() {
 		gfa.engine.Use(session.Session())
