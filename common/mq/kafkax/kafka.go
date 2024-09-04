@@ -49,7 +49,7 @@ type ProducerConfig struct {
 
 func NewProducerClient(option ProducerConfig) *kafka.Writer {
 	if option.Async == nil {
-		option.Async = ptr.ToBool(true)
+		option.Async = ptr.To(true)
 	}
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:     option.Brokers,
