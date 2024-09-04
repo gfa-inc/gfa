@@ -16,7 +16,7 @@ var (
 )
 
 type Config struct {
-	Type           string `json:"type"`
+	Type           string
 	ConsumerConfig `mapstructure:",squash"`
 	ProducerConfig `mapstructure:",squash"`
 }
