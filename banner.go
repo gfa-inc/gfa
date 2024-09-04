@@ -12,18 +12,19 @@ type bannerConfig struct {
 }
 
 func printBanner() {
+	bannerLogger := logger.New(logger.Config{})
 	option := bannerConfig{
 		Enabled: true,
 		Text:    "GFA",
 	}
 	err := config.UnmarshalKey("banner", &option)
 	if err != nil {
-		logger.Debug(err)
+		bannerLogger.Errorf(nil, "banner config error: %v", err)
 		return
 	}
 
 	if !option.Enabled {
-		logger.Debug("Banner is disabled")
+		bannerLogger.Debug(nil, "banner is disabled")
 		return
 	}
 
