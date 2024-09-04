@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"github.com/duke-git/lancet/v2/fileutil"
 	"github.com/duke-git/lancet/v2/slice"
+	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -154,7 +157,16 @@ func Get(key string) any {
 type UnmarshalKeyOpt = func(conf *koanf.UnmarshalConf)
 
 func UnmarshalKey(key string, rawVal any, opts ...UnmarshalKeyOpt) error {
-	var conf koanf.UnmarshalConf
+	conf := koanf.UnmarshalConf{
+		Tag: "mapstructure",
+		DecoderConfig: &mapstructure.DecoderConfig{
+			MatchName: func(mapKey, fieldName string) bool {
+				return strings.EqualFold(mapKey, fieldName) || strings.EqualFold(strutil.CamelCase(mapKey), fieldName)
+			},
+			Result:           rawVal,
+			WeaklyTypedInput: true,
+		},
+	}
 	for _, opt := range opts {
 		opt(&conf)
 	}
