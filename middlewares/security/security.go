@@ -86,13 +86,18 @@ func Enabled() bool {
 }
 
 func PermitRoute(route string) {
+	if matcher == nil {
+		logger.Debug("Security middleware is not enabled")
+		return
+	}
+
 	basePath := config.GetString("server.base_path")
 	if basePath != "" && !strings.HasPrefix(route, basePath) {
 		route = strings.Join([]string{basePath, route}, "")
 	}
 
-	logger.Debugf("Permit route %s", route)
 	matcher.AddRoute(route)
+	logger.Debugf("Permit route %s", route)
 }
 
 func PermitRoutes(routes []string) {
