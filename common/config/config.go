@@ -1,16 +1,25 @@
 package config
 
 import (
-	"errors"
+	"fmt"
+	"github.com/duke-git/lancet/v2/fileutil"
+	"github.com/duke-git/lancet/v2/slice"
 	"github.com/gfa-inc/gfa/common/logger"
-	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
-	"strings"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
+	"path/filepath"
+)
+
+var (
+	kf *koanf.Koanf
 )
 
 type Config struct {
 	ConfigName   string   `json:"configName"`
-	ConfigType   string   `json:"configType"`
+	ConfigType   []string `json:"configType"`
 	AutomaticEnv bool     `json:"automaticEnv"`
 	Paths        []string `json:"paths"`
 }
@@ -31,7 +40,9 @@ func WithConfigName(name string) OptionFunc {
 
 func WithConfigType(configType string) OptionFunc {
 	return func(config *Config) {
-		config.ConfigType = configType
+		if slice.IndexOf(config.ConfigType, configType) != -1 {
+			config.ConfigType = append(config.ConfigType, configType)
+		}
 	}
 }
 
@@ -46,86 +57,110 @@ func Setup(opts ...OptionFunc) {
 
 	config := &Config{
 		ConfigName:   "application",
-		ConfigType:   "yaml",
+		ConfigType:   []string{"yaml", "yml"},
 		AutomaticEnv: true,
 	}
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	viper.SetConfigName(config.ConfigName)
-	viper.SetConfigType(config.ConfigType)
+	supportedParsers := map[string]koanf.Parser{
+		"yaml": yaml.Parser(),
+		"yml":  yaml.Parser(),
+	}
+
+	kf = koanf.New(".")
+	// load from env
 	if config.AutomaticEnv {
-		viper.AutomaticEnv()
-	}
-
-	viper.AddConfigPath(".")
-	for _, path := range config.Paths {
-		viper.AddConfigPath(path)
-	}
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if errors.As(err, &configFileNotFoundError) {
-			configLogger.Panic(nil, "Config file not found")
-			return
+		err := kf.Load(env.Provider("", ".", func(s string) string {
+			return s
+		}), nil)
+		if err != nil {
+			configLogger.Panicf(nil, "Fail to load environment variables, %s", err)
 		}
-		configLogger.Panicf(nil, "Fail to read config file, %s", err)
+	}
+	// load from file
+	// add current path
+	if slice.IndexOf(config.Paths, ".") == -1 {
+		config.Paths = append(config.Paths, ".")
+	}
+	for _, p := range config.Paths {
+		for _, ct := range config.ConfigType {
+			parser, ok := supportedParsers[ct]
+			if !ok {
+				configLogger.Panicf(nil, "Unsupported config type: %s", ct)
+			}
+
+			configFilePath, err := filepath.Abs(fmt.Sprintf("%s/%s.%s", p, config.ConfigName, ct))
+			if err != nil {
+				configLogger.Panicf(nil, "Fail to get config file path, %s", err)
+			}
+
+			if !fileutil.IsExist(configFilePath) {
+				configLogger.Debugf(nil, "Config file %s not exist", configFilePath)
+				continue
+			}
+
+			err = kf.Load(file.Provider(configFilePath), parser)
+			if err != nil {
+				configLogger.Panicf(nil, "Fail to load config file %s, %s", configFilePath, err)
+				return
+			}
+		}
+
 	}
 }
 
 func SetDefault(name string, value any) {
-	viper.SetDefault(name, value)
+	err := kf.Load(confmap.Provider(map[string]interface{}{name: value}, "."), nil)
+	if err != nil {
+		logger.Panic(err)
+		return
+	}
 }
 
 func GetString(key string) string {
-	return viper.GetString(key)
+	return kf.String(key)
 }
 
 func GetInt(key string) int {
-	return viper.GetInt(key)
+	return kf.Int(key)
 }
 
 func GetBool(key string) bool {
-	return viper.GetBool(key)
+	return kf.Bool(key)
 }
 
 func GetFloat64(key string) float64 {
-	return viper.GetFloat64(key)
+	return kf.Float64(key)
 }
 
 func GetStringSlice(key string) []string {
-	return viper.GetStringSlice(key)
-}
-
-func GetStringMap(key string) map[string]interface{} {
-	return viper.GetStringMap(key)
+	return kf.Strings(key)
 }
 
 func GetStringMapString(key string) map[string]string {
-	return viper.GetStringMapString(key)
+	return kf.StringMap(key)
 }
 
 func GetStringMapStringSlice(key string) map[string][]string {
-	return viper.GetStringMapStringSlice(key)
+	return kf.StringsMap(key)
 }
 
 func Get(key string) any {
-	return viper.Get(key)
+	return kf.Get(key)
 }
 
-func UnmarshalKey(key string, rawVal any, opts ...viper.DecoderConfigOption) error {
-	matchName := func(c *mapstructure.DecoderConfig) {
-		c.MatchName = func(mapKey, fieldName string) bool {
-			mapKey = strings.ReplaceAll(mapKey, "_", "")
-			return strings.EqualFold(mapKey, fieldName)
-		}
+type UnmarshalKeyOpt = func(conf *koanf.UnmarshalConf)
+
+func UnmarshalKey(key string, rawVal any, opts ...UnmarshalKeyOpt) error {
+	var conf koanf.UnmarshalConf
+	for _, opt := range opts {
+		opt(&conf)
 	}
-	opts = append(opts, matchName)
-	return viper.UnmarshalKey(key, rawVal, opts...)
+	return kf.UnmarshalWithConf(key, rawVal, conf)
 }
 
-func Unmarshal(rawVal any, opts ...viper.DecoderConfigOption) error {
-	return viper.Unmarshal(rawVal, opts...)
+func Raw() *koanf.Koanf {
+	return kf
 }
