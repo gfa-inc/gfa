@@ -55,6 +55,24 @@ func New(option Config) *Logger {
 	return l
 }
 
+func NewBasic(option Config) *Logger {
+	level, err := zapcore.ParseLevel(option.Level)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	l := &Logger{
+		level: level,
+	}
+
+	core := zapcore.NewTee(coreMap["console"](option))
+
+	l.inner = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2),
+		zap.AddStacktrace(zap.NewAtomicLevelAt(zapcore.ErrorLevel))).Sugar()
+
+	return l
+}
+
 func (l *Logger) AddContextKey(key string) {
 	l.CtxKeys = append(l.CtxKeys, key)
 }

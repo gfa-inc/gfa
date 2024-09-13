@@ -56,7 +56,7 @@ func WithAutomaticEnv(flag bool) OptionFunc {
 }
 
 func Setup(opts ...OptionFunc) {
-	configLogger := logger.New(logger.Config{})
+	configLogger := logger.NewBasic(logger.Config{})
 
 	config := &Config{
 		ConfigName:   "application",
