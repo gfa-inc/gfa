@@ -2,20 +2,23 @@ package access_log
 
 import (
 	"fmt"
+	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/utils/http_method"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
+	"strings"
 	"time"
 )
 
 var (
-	Whitelist   *router.Matcher
-	ClientIPKey = "clientIP"
-	LatencyKey  = "latency"
+	whitelistMatcher *router.Matcher
+	ClientIPKey      = "clientIP"
+	LatencyKey       = "latency"
 )
 
 func AccessLog() gin.HandlerFunc {
-	Whitelist = router.New()
+	whitelistMatcher = router.New()
 
 	logger.AddContextKey(ClientIPKey)
 	logger.AddContextKey(LatencyKey)
@@ -34,8 +37,8 @@ func AccessLog() gin.HandlerFunc {
 
 		c.Next()
 
-		key := fmt.Sprintf("%s#%s", path, method)
-		if Whitelist.Match(key) {
+		key := genKey(path, method)
+		if whitelistMatcher.Match(key) {
 			return
 		}
 
@@ -49,4 +52,30 @@ func AccessLog() gin.HandlerFunc {
 
 		logger.TInfof(c, "[%d] %s %s %dms %s", status, method, path, latency, errorMessage)
 	}
+}
+
+func PermitRoute(route string, method any) {
+	if whitelistMatcher == nil {
+		logger.Debug("access_log middleware is not enabled")
+		return
+	}
+
+	basePath := config.GetString("server.base_path")
+	if basePath != "" && !strings.HasPrefix(route, basePath) {
+		route = strings.Join([]string{basePath, route}, "")
+	}
+
+	normalizedMethods, err := http_method.Normalize(method)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	for _, m := range normalizedMethods {
+		whitelistMatcher.AddRoute(genKey(route, m))
+	}
+}
+
+func genKey(route string, method string) string {
+	return fmt.Sprintf("%s#%s", route, method)
 }
