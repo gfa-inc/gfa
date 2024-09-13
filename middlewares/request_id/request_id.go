@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"strings"
 )
 
 var ContextKey string
@@ -34,7 +35,7 @@ func RequestID() gin.HandlerFunc {
 	return requestid.New(
 		requestid.WithCustomHeaderStrKey(requestid.HeaderStrKey(option.HeaderKey)),
 		requestid.WithGenerator(func() string {
-			return uuid.NewString()
+			return strings.ReplaceAll(uuid.NewString(), "-", "")
 		}),
 		requestid.WithHandler(func(c *gin.Context, requestID string) {
 			c.Set(option.ContextKey, requestID)
