@@ -9,13 +9,13 @@ import (
 )
 
 var (
-	Matcher     *router.Matcher
+	Whitelist   *router.Matcher
 	ClientIPKey = "clientIP"
 	LatencyKey  = "latency"
 )
 
 func AccessLog() gin.HandlerFunc {
-	Matcher = router.New()
+	Whitelist = router.New()
 
 	logger.AddContextKey(ClientIPKey)
 	logger.AddContextKey(LatencyKey)
@@ -35,7 +35,7 @@ func AccessLog() gin.HandlerFunc {
 		c.Next()
 
 		key := fmt.Sprintf("%s#%s", path, method)
-		if Matcher.Match(key) {
+		if Whitelist.Match(key) {
 			return
 		}
 
