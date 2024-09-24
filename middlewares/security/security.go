@@ -15,13 +15,13 @@ type Validator interface {
 }
 
 const (
-	PermittedFlag = "permitted"
+	PermittedFlag = "security_permitted"
 	Type          = "security"
 )
 
 var (
 	validators map[string]Validator
-	matcher    *router.Matcher
+	matcher    *router.RequestMatcher
 )
 
 func init() {
@@ -43,7 +43,7 @@ func newApiKeyValidator() *ApiKeyValidator {
 }
 
 func Security() gin.HandlerFunc {
-	matcher = router.New()
+	matcher = router.NewRequestMatcher()
 
 	if config.Get("security.session") != nil {
 		validators["session"] = newSessionValidator()
@@ -59,7 +59,7 @@ func Security() gin.HandlerFunc {
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
-		if matcher.Match(c.FullPath()) {
+		if matcher.Match(c.FullPath(), c.Request.Method) {
 			c.Set(PermittedFlag, true)
 			c.Next()
 			return
@@ -88,24 +88,19 @@ func Enabled() bool {
 	return config.Get("security") != nil
 }
 
-func PermitRoute(route string) {
+func PermitRoute(route string, method any) {
 	if matcher == nil {
 		logger.Debug("Security middleware is not enabled")
 		return
 	}
 
-	basePath := config.GetString("server.base_path")
-	if basePath != "" && !strings.HasPrefix(route, basePath) {
-		route = strings.Join([]string{basePath, route}, "")
-	}
-
-	matcher.AddRoute(route)
-	logger.Debugf("Permit route %s", route)
+	matcher.AddRoute(route, method)
+	logger.Debugf("Security middleware permit route %s", route)
 }
 
-func PermitRoutes(routes []string) {
+func PermitRoutes(routes [][]any) {
 	for _, route := range routes {
-		PermitRoute(route)
+		PermitRoute(route[0].(string), route[1])
 	}
 }
 
