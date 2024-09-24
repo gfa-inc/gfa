@@ -35,14 +35,20 @@ func (m *Matcher) Match(uri string) bool {
 
 	newUri := uri
 	for {
+		var key string
 		index := strings.LastIndex(newUri, "/")
-		if index != 0 {
+		if index >= 0 {
 			newUri = newUri[0:index]
-			key := newUri + "/*"
-			if _, ok := m.expectedRoutes[key]; ok {
-				return true
-			}
+			key = newUri + "/*"
 		} else {
+			key = "*"
+		}
+
+		if _, ok := m.expectedRoutes[key]; ok {
+			return true
+		}
+
+		if index < 0 {
 			break
 		}
 	}
