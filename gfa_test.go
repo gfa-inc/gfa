@@ -7,6 +7,7 @@ import (
 	"github.com/gfa-inc/gfa/common/mq/kafkax"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares/security"
+	"github.com/gfa-inc/gfa/utils/http_method"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/segmentio/kafka-go"
@@ -44,7 +45,7 @@ func (*testController) hello(c *gin.Context) {
 
 func (tc *testController) Setup(r *gin.RouterGroup) {
 	mysqlx.Client.Exec("select 1")
-	PermitRoute("/hello")
+	security.PermitRoute("/hello", http_method.MethodGet)
 	r.GET("/hello", tc.hello)
 }
 

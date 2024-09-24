@@ -194,11 +194,3 @@ func AddController(controller core.Controller) {
 func AddControllers(controllers ...core.Controller) {
 	gfa.controllers = append(gfa.controllers, controllers...)
 }
-
-func PermitRoute(route string) {
-	security.PermitRoute(route)
-}
-
-func PermitRoutes(routes []string) {
-	security.PermitRoutes(routes)
-}
