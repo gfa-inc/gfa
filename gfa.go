@@ -33,6 +33,7 @@ var (
 type Gfa struct {
 	engine *gin.Engine
 	mdws   []gin.HandlerFunc
+	setups []func()
 
 	controllers []core.Controller
 	ginOpts     []gin.OptionFunc
@@ -59,6 +60,10 @@ func (g *Gfa) WithCfgOption(opts ...config.OptionFunc) {
 
 func (g *Gfa) WithMiddleware(mdws ...gin.HandlerFunc) {
 	g.mdws = append(g.mdws, mdws...)
+}
+
+func (g *Gfa) WithSetup(setup func()) {
+	g.setups = append(g.setups, setup)
 }
 
 func (g *Gfa) Run() {
@@ -104,6 +109,12 @@ func WithMiddleware(mdws ...gin.HandlerFunc) {
 	gfa.WithMiddleware(mdws...)
 }
 
+func WithSetup(setups ...func()) {
+	for _, setup := range setups {
+		gfa.WithSetup(setup)
+	}
+}
+
 func Default() *Gfa {
 	config.Setup(gfa.cfgOpts...)
 
@@ -132,6 +143,10 @@ func Default() *Gfa {
 	}
 	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
 		logger.Debugf("%s %s %s %d", httpMethod, absolutePath, handlerName, nuHandlers)
+	}
+
+	for _, setup := range gfa.setups {
+		setup()
 	}
 
 	gfa.engine = gin.New(gfa.ginOpts...)

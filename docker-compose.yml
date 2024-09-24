@@ -9,6 +9,7 @@ services:
       - MYSQL_USER=gfa
       - MYSQL_PASSWORD=123456
       - MYSQL_DATABASE=gfa
+      - TZ=Asia/Shanghai
   redis:
     image: redis:latest
     container_name: gfa-redis
