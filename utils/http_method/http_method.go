@@ -15,6 +15,8 @@ const (
 	MethodOptions uint8 = 32
 	MethodHead    uint8 = 64
 	MethodTrace   uint8 = 128
+	All                 = MethodGet | MethodPost | MethodPut | MethodDelete | MethodPatch | MethodOptions | MethodHead | MethodTrace
+	Restful             = MethodGet | MethodPost | MethodPut | MethodDelete
 )
 
 var methodMap = map[uint8]string{
