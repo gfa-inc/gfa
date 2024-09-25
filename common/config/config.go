@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	config *Config
+	config    *Config
+	modifiers []func(*Config)
 )
 
 type Config struct {
@@ -27,7 +28,6 @@ type Config struct {
 	ConfigType   []string
 	AutomaticEnv bool
 	Paths        []string
-	modifiers    []func(*Config)
 }
 
 type OptionFunc func(config *Config)
@@ -59,7 +59,7 @@ func WithAutomaticEnv(flag bool) OptionFunc {
 }
 
 func WithModifier(modifier func(*Config)) {
-	config.modifiers = append(config.modifiers, modifier)
+	modifiers = append(modifiers, modifier)
 }
 
 func Setup(opts ...OptionFunc) {
@@ -119,7 +119,7 @@ func Setup(opts ...OptionFunc) {
 		}
 	}
 
-	for _, modifier := range config.modifiers {
+	for _, modifier := range modifiers {
 		modifier(config)
 	}
 }
