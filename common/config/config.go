@@ -23,10 +23,11 @@ var (
 type Config struct {
 	koanf.Koanf
 
-	ConfigName   string   `json:"configName"`
-	ConfigType   []string `json:"configType"`
-	AutomaticEnv bool     `json:"automaticEnv"`
-	Paths        []string `json:"paths"`
+	ConfigName   string
+	ConfigType   []string
+	AutomaticEnv bool
+	Paths        []string
+	modifiers    []func(*Config)
 }
 
 type OptionFunc func(config *Config)
@@ -54,6 +55,12 @@ func WithConfigType(configType string) OptionFunc {
 func WithAutomaticEnv(flag bool) OptionFunc {
 	return func(config *Config) {
 		config.AutomaticEnv = flag
+	}
+}
+
+func WithModifier(modifier func(*Config)) OptionFunc {
+	return func(config *Config) {
+		config.modifiers = append(config.modifiers, modifier)
 	}
 }
 
@@ -112,7 +119,10 @@ func Setup(opts ...OptionFunc) {
 				return
 			}
 		}
+	}
 
+	for _, modifier := range config.modifiers {
+		modifier(config)
 	}
 }
 
