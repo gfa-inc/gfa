@@ -58,10 +58,8 @@ func WithAutomaticEnv(flag bool) OptionFunc {
 	}
 }
 
-func WithModifier(modifier func(*Config)) OptionFunc {
-	return func(config *Config) {
-		config.modifiers = append(config.modifiers, modifier)
-	}
+func WithModifier(modifier func(*Config)) {
+	config.modifiers = append(config.modifiers, modifier)
 }
 
 func Setup(opts ...OptionFunc) {
