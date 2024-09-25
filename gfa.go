@@ -122,6 +122,10 @@ func Default() *Gfa {
 
 	logger.Setup(parseLoggerConfig())
 
+	for _, setup := range gfa.setups {
+		setup()
+	}
+
 	cache.Setup()
 
 	db.Setup()
@@ -143,10 +147,6 @@ func Default() *Gfa {
 	}
 	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
 		logger.Debugf("%s %s %s %d", httpMethod, absolutePath, handlerName, nuHandlers)
-	}
-
-	for _, setup := range gfa.setups {
-		setup()
 	}
 
 	gfa.Engine = gin.New(gfa.ginOpts...)
