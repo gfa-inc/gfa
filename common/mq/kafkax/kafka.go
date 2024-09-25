@@ -5,6 +5,8 @@ import (
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/ptr"
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
 	"log"
 )
 
@@ -16,7 +18,8 @@ var (
 )
 
 type Config struct {
-	Type           string
+	Type string
+
 	ConsumerConfig `mapstructure:",squash"`
 	ProducerConfig `mapstructure:",squash"`
 }
@@ -26,38 +29,52 @@ type ConsumerConfig struct {
 	Topic     string
 	GroupID   string
 	Partition int
+	Mechanism string
+	Username  string
+	Password  string
 	Default   bool
 }
 
+type ProducerConfig struct {
+	Brokers   []string
+	Topic     string
+	Async     *bool
+	Mechanism string
+	Username  string
+	Password  string
+}
+
 func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
-	reader := kafka.NewReader(kafka.ReaderConfig{
+	cfg := kafka.ReaderConfig{
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		GroupID:     option.GroupID,
 		Partition:   option.Partition,
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
-	})
+	}
+
+	cfg.Dialer = fillMechanism(option.Mechanism, option.Username, option.Password)
+
+	reader := kafka.NewReader(cfg)
 
 	return reader
-}
-
-type ProducerConfig struct {
-	Brokers []string
-	Topic   string
-	Async   *bool
 }
 
 func NewProducerClient(option ProducerConfig) *kafka.Writer {
 	if option.Async == nil {
 		option.Async = ptr.To(true)
 	}
-	writer := kafka.NewWriter(kafka.WriterConfig{
+	cfg := kafka.WriterConfig{
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		Balancer:    &kafka.LeastBytes{},
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 		Async:       *option.Async,
-	})
+	}
+
+	cfg.Dialer = fillMechanism(option.Mechanism, option.Username, option.Password)
+
+	writer := kafka.NewWriter(cfg)
 
 	return writer
 }
@@ -131,4 +148,30 @@ func HasConsumerClient(name string) bool {
 func HasProducerClient(name string) bool {
 	_, ok := producerClientPool[name]
 	return ok
+}
+
+func fillMechanism(mechanism string, username string, password string) *kafka.Dialer {
+	dialer := kafka.DefaultDialer
+
+	switch mechanism {
+	case "PLAIN":
+		dialer.SASLMechanism = plain.Mechanism{
+			Username: username,
+			Password: password,
+		}
+	case "SCRAM-SHA-256":
+		var err error
+		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA256, username, password)
+		if err != nil {
+			logger.Panicf("Failed to create SCRAM-SHA-256 mechanism: %s", err)
+		}
+	case "SCRAM-SHA-512":
+		var err error
+		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA512, username, password)
+		if err != nil {
+			logger.Panicf("Failed to create SCRAM-SHA-512 mechanism: %s", err)
+		}
+	}
+
+	return dialer
 }
