@@ -25,14 +25,15 @@ type Config struct {
 }
 
 type ConsumerConfig struct {
-	Brokers   []string
-	Topic     string
-	GroupID   string
-	Partition int
-	Mechanism string
-	Username  string
-	Password  string
-	Default   bool
+	Brokers     []string
+	Topic       string
+	GroupID     string
+	GroupTopics []string
+	Partition   int
+	Mechanism   string
+	Username    string
+	Password    string
+	Default     bool
 }
 
 type ProducerConfig struct {
@@ -49,6 +50,7 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		GroupID:     option.GroupID,
+		GroupTopics: option.GroupTopics,
 		Partition:   option.Partition,
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 	}
