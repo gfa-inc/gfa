@@ -47,7 +47,7 @@ func NewClient(option Config) (*elasticsearch.TypedClient, error) {
 	defer cancel()
 	_, err = client.Ping().Do(pingTimeout)
 	if err != nil {
-		logger.Panicf("Fail to ping elastic, %s", err)
+		logger.Warnf("Fail to ping elastic, %s", err)
 		return nil, err
 	}
 
