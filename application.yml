@@ -42,7 +42,8 @@ kafka:
   sasl:
     brokers:
       - "127.0.0.1:9093"
-    topic: "gfa"
+    topics:
+      - "gfa"
     mechanism: "PLAIN"
     username: "gfa"
     password: "123456"

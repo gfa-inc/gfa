@@ -24,25 +24,31 @@ type Config struct {
 	ProducerConfig `mapstructure:",squash"`
 }
 
+type SaslConfig struct {
+	Mechanism string
+	Username  string
+	Password  string
+}
+
 type ConsumerConfig struct {
+	SaslConfig  `mapstructure:",squash"`
+	Name        string
 	Brokers     []string
 	Topic       string
+	Topics      []string
 	GroupID     string
 	GroupTopics []string
 	Partition   int
-	Mechanism   string
-	Username    string
-	Password    string
 	Default     bool
 }
 
 type ProducerConfig struct {
-	Brokers   []string
-	Topic     string
-	Async     *bool
-	Mechanism string
-	Username  string
-	Password  string
+	SaslConfig `mapstructure:",squash"`
+	Name       string
+	Brokers    []string
+	Topic      string
+	Topics     []string
+	Async      *bool
 }
 
 func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
@@ -52,12 +58,19 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 		GroupID:     option.GroupID,
 		GroupTopics: option.GroupTopics,
 		Partition:   option.Partition,
+		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 	}
 
-	cfg.Dialer = fillMechanism(option.Mechanism, option.Username, option.Password)
+	cfg.Dialer = fillMechanism(SaslConfig{
+		Mechanism: option.Mechanism,
+		Username:  option.Username,
+		Password:  option.Password,
+	})
 
 	reader := kafka.NewReader(cfg)
+
+	logger.Debugf("Consume to kafka [%s]", option.Name)
 
 	return reader
 }
@@ -70,13 +83,20 @@ func NewProducerClient(option ProducerConfig) *kafka.Writer {
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
 		Balancer:    &kafka.LeastBytes{},
+		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 		Async:       *option.Async,
 	}
 
-	cfg.Dialer = fillMechanism(option.Mechanism, option.Username, option.Password)
+	cfg.Dialer = fillMechanism(SaslConfig{
+		Mechanism: option.Mechanism,
+		Username:  option.Username,
+		Password:  option.Password,
+	})
 
 	writer := kafka.NewWriter(cfg)
+
+	logger.Debugf("Produce to kafka [%s]", option.Name)
 
 	return writer
 }
@@ -98,24 +118,53 @@ func Setup() {
 
 	for k, v := range configMap {
 		if v.Type == "consumer" || v.Type == "" {
-			client := NewConsumerClient(v.ConsumerConfig)
-			PutConsumerClient(k, client)
+			if v.ConsumerConfig.Topic != "" {
+				v.ConsumerConfig.Name = k
+				client := NewConsumerClient(v.ConsumerConfig)
+				PutConsumerClient(k, client)
 
-			if v.Default {
-				ConsumerClient = client
+				if v.Default {
+					ConsumerClient = client
+				}
+			}
+
+			// multi topics
+			if len(v.ConsumerConfig.Topics) > 0 {
+				for _, topic := range v.ConsumerConfig.Topics {
+					key := genKey(k, topic)
+					v.ConsumerConfig.Name = key
+					v.ConsumerConfig.Topic = topic
+					client := NewConsumerClient(v.ConsumerConfig)
+					PutConsumerClient(key, client)
+				}
 			}
 		}
 		if v.Type == "producer" || v.Type == "" {
+			v.ProducerConfig.Name = k
 			client := NewProducerClient(v.ProducerConfig)
 			PutProducerClient(k, client)
 
 			if v.Default {
 				ProducerClient = client
 			}
+
+			if len(v.ProducerConfig.Topics) > 0 {
+				for _, topic := range v.ProducerConfig.Topics {
+					key := genKey(k, topic)
+					v.ProducerConfig.Name = key
+					v.ProducerConfig.Topic = topic
+					client = NewProducerClient(v.ProducerConfig)
+					PutProducerClient(key, client)
+				}
+			}
 		}
 	}
 
 	logger.Infof("Success to init kafka, %d consumer and %d producer", len(consumerClientPool), len(producerClientPool))
+}
+
+func genKey(k string, topic string) string {
+	return k + "." + topic
 }
 
 func GetConsumerClient(name string) *kafka.Reader {
@@ -152,24 +201,24 @@ func HasProducerClient(name string) bool {
 	return ok
 }
 
-func fillMechanism(mechanism string, username string, password string) *kafka.Dialer {
+func fillMechanism(saslConfig SaslConfig) *kafka.Dialer {
 	dialer := kafka.DefaultDialer
 
-	switch mechanism {
+	switch saslConfig.Mechanism {
 	case "PLAIN":
 		dialer.SASLMechanism = plain.Mechanism{
-			Username: username,
-			Password: password,
+			Username: saslConfig.Username,
+			Password: saslConfig.Password,
 		}
 	case "SCRAM-SHA-256":
 		var err error
-		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA256, username, password)
+		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA256, saslConfig.Username, saslConfig.Password)
 		if err != nil {
 			logger.Panicf("Failed to create SCRAM-SHA-256 mechanism: %s", err)
 		}
 	case "SCRAM-SHA-512":
 		var err error
-		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA512, username, password)
+		dialer.SASLMechanism, err = scram.Mechanism(scram.SHA512, saslConfig.Username, saslConfig.Password)
 		if err != nil {
 			logger.Panicf("Failed to create SCRAM-SHA-512 mechanism: %s", err)
 		}
