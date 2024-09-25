@@ -65,7 +65,9 @@ func Setup() {
 
 	logger.Infof("Starting to initialize aws s3 client pool")
 	for k, v := range configMap {
-		client, err := NewS3Client(v)
+		v.Name = k
+		var client *s3.Client
+		client, err = NewS3Client(v)
 		if err != nil {
 			logger.Error(err)
 			continue
