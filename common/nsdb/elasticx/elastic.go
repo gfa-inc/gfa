@@ -48,7 +48,6 @@ func NewClient(option Config) (*elasticsearch.TypedClient, error) {
 	_, err = client.Ping().Do(pingTimeout)
 	if err != nil {
 		logger.Warnf("Fail to ping elastic, %s", err)
-		return nil, nil
 	}
 
 	logger.Infof("Connectng to elastic [%s] %s", option.Name, strings.Join(option.Addrs, ", "))
