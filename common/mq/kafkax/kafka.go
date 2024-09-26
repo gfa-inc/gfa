@@ -202,7 +202,7 @@ func HasProducerClient(name string) bool {
 }
 
 func fillMechanism(saslConfig SaslConfig) *kafka.Dialer {
-	dialer := kafka.DefaultDialer
+	dialer := *kafka.DefaultDialer
 
 	switch saslConfig.Mechanism {
 	case "PLAIN":
@@ -224,5 +224,5 @@ func fillMechanism(saslConfig SaslConfig) *kafka.Dialer {
 		}
 	}
 
-	return dialer
+	return &dialer
 }
