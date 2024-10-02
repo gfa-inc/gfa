@@ -2,16 +2,15 @@ package config
 
 import (
 	"fmt"
-	"github.com/duke-git/lancet/v2/fileutil"
-	"github.com/duke-git/lancet/v2/slice"
-	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/utils"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
+	"github.com/samber/lo"
 	"path/filepath"
 	"strings"
 )
@@ -46,7 +45,7 @@ func WithConfigName(name string) OptionFunc {
 
 func WithConfigType(configType string) OptionFunc {
 	return func(config *Config) {
-		if slice.IndexOf(config.ConfigType, configType) != -1 {
+		if lo.IndexOf(config.ConfigType, configType) != -1 {
 			config.ConfigType = append(config.ConfigType, configType)
 		}
 	}
@@ -91,7 +90,7 @@ func Setup(opts ...OptionFunc) {
 	}
 	// load from file
 	// add current path
-	if slice.IndexOf(config.Paths, ".") == -1 {
+	if lo.IndexOf(config.Paths, ".") == -1 {
 		config.Paths = append(config.Paths, ".")
 	}
 	for _, p := range config.Paths {
@@ -106,7 +105,7 @@ func Setup(opts ...OptionFunc) {
 				configLogger.Panicf(nil, "Fail to get config file path, %s", err)
 			}
 
-			if !fileutil.IsExist(configFilePath) {
+			if !utils.IsExist(configFilePath) {
 				configLogger.Debugf(nil, "Config file %s not exist", configFilePath)
 				continue
 			}
@@ -171,7 +170,7 @@ func UnmarshalKey(key string, rawVal any, opts ...UnmarshalKeyOpt) error {
 		Tag: "mapstructure",
 		DecoderConfig: &mapstructure.DecoderConfig{
 			MatchName: func(mapKey, fieldName string) bool {
-				return strings.EqualFold(mapKey, fieldName) || strings.EqualFold(strutil.CamelCase(mapKey), fieldName)
+				return strings.EqualFold(mapKey, fieldName) || strings.EqualFold(lo.CamelCase(mapKey), fieldName)
 			},
 			Result:           rawVal,
 			WeaklyTypedInput: true,

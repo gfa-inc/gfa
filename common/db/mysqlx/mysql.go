@@ -3,9 +3,9 @@ package mysqlx
 import (
 	"context"
 	"database/sql"
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/samber/lo"
 	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -83,7 +83,7 @@ func Setup() {
 	}
 
 	logger.Infof("Mysql client pool has been initialized with %d clients, clients: %s",
-		len(clientPool), strings.Join(maputil.Keys(clientPool), ", "))
+		len(clientPool), strings.Join(lo.Keys(clientPool), ", "))
 }
 
 func GetClient(name string) *gorm.DB {

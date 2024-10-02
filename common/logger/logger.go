@@ -2,9 +2,8 @@ package logger
 
 import (
 	"context"
-	"github.com/duke-git/lancet/v2/maputil"
-	"github.com/duke-git/lancet/v2/slice"
 	"github.com/gookit/color"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
@@ -45,7 +44,7 @@ func New(option Config) *Logger {
 		CtxKeys:       option.CtxKeys,
 		CtxKeyMapping: option.CtxKeyMapping,
 	}
-	core := zapcore.NewTee(slice.Map(maputil.Entries(coreMap), func(_ int, entry maputil.Entry[string, coreFactory]) zapcore.Core {
+	core := zapcore.NewTee(lo.Map(lo.Entries(coreMap), func(entry lo.Entry[string, coreFactory], _ int) zapcore.Core {
 		return entry.Value(option)
 	})...)
 
@@ -328,7 +327,7 @@ func Setup(opts ...OptionFunc) {
 	}
 	globalLogger = New(option)
 
-	Debugf("Added logger core: %s", strings.Join(maputil.Keys(coreMap), ", "))
+	Debugf("Added logger core: %s", strings.Join(lo.Keys(coreMap), ", "))
 
 	Infof("Global logger has been initialized with %d core", len(coreMap))
 }

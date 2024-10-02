@@ -1,11 +1,11 @@
 package security
 
 import (
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
 	"net/http"
 	"strings"
 )
@@ -55,7 +55,7 @@ func Security() gin.HandlerFunc {
 		validators["api_key"] = newApiKeyValidator()
 	}
 
-	logger.Debugf("Enabled security validators: %s", strings.Join(maputil.Keys(validators), ", "))
+	logger.Debugf("Enabled security validators: %s", strings.Join(lo.Keys(validators), ", "))
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
