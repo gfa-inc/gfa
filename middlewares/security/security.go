@@ -22,8 +22,8 @@ func (vw *ValidatorWrapper) Valid(c *gin.Context) error {
 	return vw.f(c)
 }
 
-func NewValidator(f func(c *gin.Context) error) ValidatorWrapper {
-	return ValidatorWrapper{f: f}
+func NewValidator(f func(c *gin.Context) error) *ValidatorWrapper {
+	return &ValidatorWrapper{f: f}
 }
 
 const (
