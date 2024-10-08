@@ -14,6 +14,18 @@ type Validator interface {
 	Valid(c *gin.Context) error
 }
 
+type ValidatorWrapper struct {
+	f func(c *gin.Context) error
+}
+
+func (vw *ValidatorWrapper) Valid(c *gin.Context) error {
+	return vw.f(c)
+}
+
+func NewValidator(f func(c *gin.Context) error) ValidatorWrapper {
+	return ValidatorWrapper{f: f}
+}
+
 const (
 	PermittedFlag = "security_permitted"
 	Type          = "security"
