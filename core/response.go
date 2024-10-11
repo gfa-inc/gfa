@@ -14,11 +14,11 @@ type Response[T any] struct {
 	Code    string `json:"code" validate:"required"`
 	Message string `json:"msg"`
 	Data    T      `json:"data"`
-	TraceID string `json:"traceId,omitempty"`
+	TraceID string `json:"traceId,omitempty" validate:"required"`
 }
 
 type PaginatedData[T any] struct {
-	Data  T     `json:"list"`
+	Data  T     `json:"list" validate:"required"`
 	Total int64 `json:"total" validate:"required"`
 }
 
