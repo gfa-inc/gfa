@@ -9,22 +9,22 @@ import (
 )
 
 // Response represents processing result
-type Response struct {
+type Response[T any] struct {
 	Success bool   `json:"success"`
 	Code    string `json:"code"`
 	Message string `json:"msg"`
-	Data    any    `json:"data"`
+	Data    T      `json:"data"`
 	TraceID string `json:"traceId,omitempty"`
 }
 
-type PaginatedData struct {
-	Data  any   `json:"list"`
+type PaginatedData[T any] struct {
+	Data  T     `json:"list"`
 	Total int64 `json:"total"`
 }
 
-func NewSucceedResponse(c context.Context, data any) Response {
+func NewSucceedResponse[T any](c context.Context, data T) Response[T] {
 	traceID, _ := c.Value(request_id.ContextKey).(string)
-	return Response{
+	return Response[T]{
 		Success: true,
 		Code:    "0",
 		Message: "",
@@ -33,9 +33,9 @@ func NewSucceedResponse(c context.Context, data any) Response {
 	}
 }
 
-func NewFailedResponse(c context.Context, code string, message string) Response {
+func NewFailedResponse(c context.Context, code string, message string) Response[any] {
 	traceID, _ := c.Value(request_id.ContextKey).(string)
-	return Response{
+	return Response[any]{
 		Success: false,
 		Code:    code,
 		Message: message,
@@ -55,6 +55,6 @@ func Fail(c *gin.Context, code string, message string) {
 }
 
 // Paginated returns paginated data
-func Paginated(data any, total int64) PaginatedData {
-	return PaginatedData{data, total}
+func Paginated[T any](data T, total int64) PaginatedData[T] {
+	return PaginatedData[T]{data, total}
 }

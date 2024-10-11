@@ -13,6 +13,10 @@ var ErrNotFoundSession = errors.New("not found session")
 type SessionValidator struct {
 }
 
+func NewSessionValidator() *SessionValidator {
+	return &SessionValidator{}
+}
+
 func (s *SessionValidator) Valid(c *gin.Context) error {
 	session := sessions.Default(c)
 	v := session.Get(SessionKey)

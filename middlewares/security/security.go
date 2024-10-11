@@ -42,14 +42,6 @@ func init() {
 	customValidators = make(map[string]Validator)
 }
 
-func newSessionValidator() *SessionValidator {
-	return &SessionValidator{}
-}
-
-func newJwtValidator() *JwtValidator {
-	return &JwtValidator{}
-}
-
 func newApiKeyValidator() *ApiKeyValidator {
 	config.SetDefault("security.api_key.header_key", "X-Api-Key")
 	headerKey := config.GetString("security.api_key.header_key")
@@ -64,10 +56,10 @@ func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
 
 	if config.Get("security.session") != nil {
-		validators["session"] = newSessionValidator()
+		validators["session"] = NewSessionValidator()
 	}
 	if config.Get("security.jwt") != nil {
-		validators["jwt"] = newJwtValidator()
+		validators["jwt"] = NewJwtValidator()
 	}
 	if config.Get("security.api_key") != nil {
 		validators["api_key"] = newApiKeyValidator()

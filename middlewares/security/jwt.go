@@ -25,6 +25,10 @@ type JwtValidator struct {
 	tokenLookupMap [][2]string
 }
 
+func NewJwtValidator() *JwtValidator {
+	return &JwtValidator{}
+}
+
 func (j *JwtValidator) Valid(c *gin.Context) error {
 	token, err := j.ParseToken(c)
 	if err != nil {

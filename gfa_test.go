@@ -40,7 +40,7 @@ func (*testController) hello(c *gin.Context) {
 	}
 
 	logger.TInfo(c.Copy(), "hello")
-	core.OK(c, "hello")
+	core.OK(c, core.Paginated("hello", 1))
 }
 
 func (tc *testController) Setup(r *gin.RouterGroup) {
