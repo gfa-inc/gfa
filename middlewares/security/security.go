@@ -14,6 +14,18 @@ type Validator interface {
 	Valid(c *gin.Context) error
 }
 
+type ValidatorWrapper struct {
+	f func(c *gin.Context) error
+}
+
+func (vw *ValidatorWrapper) Valid(c *gin.Context) error {
+	return vw.f(c)
+}
+
+func NewValidator(f func(c *gin.Context) error) *ValidatorWrapper {
+	return &ValidatorWrapper{f: f}
+}
+
 const (
 	PermittedFlag = "security_permitted"
 	Type          = "security"
@@ -42,10 +54,6 @@ func newApiKeyValidator() *ApiKeyValidator {
 	config.SetDefault("security.api_key.header_key", "X-Api-Key")
 	headerKey := config.GetString("security.api_key.header_key")
 	return NewApiKeyValidator(headerKey)
-}
-
-func WithValidator(name string, v Validator) {
-	validators[name] = v
 }
 
 func Security() gin.HandlerFunc {
