@@ -3,10 +3,10 @@ package elasticx
 import (
 	"context"
 	"crypto/tls"
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/samber/lo"
 	"net/http"
 	"strings"
 	"time"
@@ -83,7 +83,7 @@ func Setup() {
 	}
 
 	logger.Infof("Elastic client pool has been initialized with %d clients, clients: %s",
-		len(clientPool), strings.Join(maputil.Keys(clientPool), ", "))
+		len(clientPool), strings.Join(lo.Keys(clientPool), ", "))
 }
 
 func GetClient(name string) *elasticsearch.TypedClient {

@@ -6,9 +6,9 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/samber/lo"
 	"strings"
 )
 
@@ -80,7 +80,7 @@ func Setup() {
 	}
 
 	logger.Infof("Aws s3 client pool has been initialized with %d clients, clients: %s",
-		len(clientPool), strings.Join(maputil.Keys(clientPool), ", "))
+		len(clientPool), strings.Join(lo.Keys(clientPool), ", "))
 }
 
 func GetClient(name string) *s3.Client {

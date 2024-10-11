@@ -9,7 +9,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/duke-git/lancet/v2 v2.3.2
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gin-contrib/graceful v1.0.2
 	github.com/gin-contrib/requestid v1.0.3
@@ -28,6 +27,7 @@ require (
 	github.com/knadh/koanf/providers/file v1.1.0
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/redis/go-redis/v9 v9.6.1
+	github.com/samber/lo v1.47.0
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/files v1.0.1
@@ -106,7 +106,6 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.9.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect

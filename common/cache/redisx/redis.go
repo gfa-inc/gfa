@@ -2,10 +2,10 @@ package redisx
 
 import (
 	"context"
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/redis/go-redis/v9"
+	"github.com/samber/lo"
 	"strings"
 )
 
@@ -66,7 +66,7 @@ func Setup() {
 	}
 
 	logger.Infof("Redis client pool has been initialized with %d clients, clients: %s",
-		len(clientPool), strings.Join(maputil.Keys(clientPool), ", "))
+		len(clientPool), strings.Join(lo.Keys(clientPool), ", "))
 }
 
 func GetClient(name string) redis.UniversalClient {

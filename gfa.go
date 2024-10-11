@@ -31,9 +31,10 @@ var (
 )
 
 type Gfa struct {
-	Engine *gin.Engine
-	mdws   []gin.HandlerFunc
-	setups []func()
+	Engine     *gin.Engine
+	mdws       []gin.HandlerFunc
+	setups     []func()
+	postSetups []func()
 
 	controllers []core.Controller
 	ginOpts     []gin.OptionFunc
@@ -64,6 +65,10 @@ func (g *Gfa) WithMiddleware(mdws ...gin.HandlerFunc) {
 
 func (g *Gfa) WithSetup(setup func()) {
 	g.setups = append(g.setups, setup)
+}
+
+func (g *Gfa) WithPostSetup(setup func()) {
+	g.postSetups = append(g.postSetups, setup)
 }
 
 func (g *Gfa) Run() {
@@ -137,6 +142,11 @@ func Default() *Gfa {
 	validatorx.Setup()
 
 	aws.Setup()
+
+	// post setups
+	for _, setup := range gfa.postSetups {
+		setup()
+	}
 
 	if !logger.IsDebugLevelEnabled() {
 		gin.SetMode(gin.ReleaseMode)

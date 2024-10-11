@@ -1,29 +1,17 @@
 package security
 
 import (
-	"github.com/duke-git/lancet/v2/maputil"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
 	"net/http"
 	"strings"
 )
 
 type Validator interface {
 	Valid(c *gin.Context) error
-}
-
-type ValidatorWrapper struct {
-	f func(c *gin.Context) error
-}
-
-func (vw *ValidatorWrapper) Valid(c *gin.Context) error {
-	return vw.f(c)
-}
-
-func NewValidator(f func(c *gin.Context) error) *ValidatorWrapper {
-	return &ValidatorWrapper{f: f}
 }
 
 const (
@@ -42,6 +30,14 @@ func init() {
 	customValidators = make(map[string]Validator)
 }
 
+func newSessionValidator() *SessionValidator {
+	return &SessionValidator{}
+}
+
+func newJwtValidator() *JwtValidator {
+	return &JwtValidator{}
+}
+
 func newApiKeyValidator() *ApiKeyValidator {
 	config.SetDefault("security.api_key.header_key", "X-Api-Key")
 	headerKey := config.GetString("security.api_key.header_key")
@@ -56,10 +52,10 @@ func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
 
 	if config.Get("security.session") != nil {
-		validators["session"] = NewSessionValidator()
+		validators["session"] = newSessionValidator()
 	}
 	if config.Get("security.jwt") != nil {
-		validators["jwt"] = NewJwtValidator()
+		validators["jwt"] = newJwtValidator()
 	}
 	if config.Get("security.api_key") != nil {
 		validators["api_key"] = newApiKeyValidator()
@@ -69,7 +65,7 @@ func Security() gin.HandlerFunc {
 		validators[k] = v
 	}
 
-	logger.Debugf("Enabled security validators: %s", strings.Join(maputil.Keys(validators), ", "))
+	logger.Debugf("Enabled security validators: %s", strings.Join(lo.Keys(validators), ", "))
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
