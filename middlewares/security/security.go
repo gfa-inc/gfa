@@ -56,6 +56,10 @@ func newApiKeyValidator() *ApiKeyValidator {
 	return NewApiKeyValidator(headerKey)
 }
 
+func WithValidator(name string, v Validator) {
+	customValidators[name] = v
+}
+
 func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
 
