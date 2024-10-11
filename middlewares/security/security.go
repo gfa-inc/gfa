@@ -20,12 +20,14 @@ const (
 )
 
 var (
-	validators map[string]Validator
-	matcher    *router.RequestMatcher
+	matcher          *router.RequestMatcher
+	validators       map[string]Validator
+	customValidators map[string]Validator
 )
 
 func init() {
 	validators = make(map[string]Validator)
+	customValidators = make(map[string]Validator)
 }
 
 func newSessionValidator() *SessionValidator {
@@ -42,6 +44,10 @@ func newApiKeyValidator() *ApiKeyValidator {
 	return NewApiKeyValidator(headerKey)
 }
 
+func WithValidator(name string, v Validator) {
+	validators[name] = v
+}
+
 func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
 
@@ -53,6 +59,10 @@ func Security() gin.HandlerFunc {
 	}
 	if config.Get("security.api_key") != nil {
 		validators["api_key"] = newApiKeyValidator()
+	}
+
+	for k, v := range customValidators {
+		validators[k] = v
 	}
 
 	logger.Debugf("Enabled security validators: %s", strings.Join(lo.Keys(validators), ", "))
