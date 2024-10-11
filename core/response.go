@@ -10,8 +10,8 @@ import (
 
 // Response represents processing result
 type Response[T any] struct {
-	Success bool   `json:"success"`
-	Code    string `json:"code"`
+	Success bool   `json:"success" validate:"required"`
+	Code    string `json:"code" validate:"required"`
 	Message string `json:"msg"`
 	Data    T      `json:"data"`
 	TraceID string `json:"traceId,omitempty"`
@@ -19,7 +19,7 @@ type Response[T any] struct {
 
 type PaginatedData[T any] struct {
 	Data  T     `json:"list"`
-	Total int64 `json:"total"`
+	Total int64 `json:"total" validate:"required"`
 }
 
 func NewSucceedResponse[T any](c context.Context, data T) Response[T] {
