@@ -120,6 +120,12 @@ func WithSetup(setups ...func()) {
 	}
 }
 
+func WithPostSetup(setups ...func()) {
+	for _, setup := range setups {
+		gfa.WithPostSetup(setup)
+	}
+}
+
 func Default() *Gfa {
 	config.Setup(gfa.cfgOpts...)
 

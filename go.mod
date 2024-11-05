@@ -8,6 +8,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.30
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
+	github.com/bytedance/sonic v1.12.2
+	github.com/casbin/casbin/v2 v2.100.0
+	github.com/casbin/gorm-adapter/v3 v3.28.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
 	github.com/gin-contrib/graceful v1.0.2
@@ -27,14 +30,17 @@ require (
 	github.com/knadh/koanf/providers/file v1.1.0
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/redis/go-redis/v9 v9.6.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/samber/lo v1.47.0
 	github.com/segmentio/kafka-go v0.4.47
+	github.com/spf13/cast v1.7.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/mysql v1.5.7
+	gorm.io/gen v0.3.26
 	gorm.io/gorm v1.25.11
 )
 
@@ -55,10 +61,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.5 // indirect
 	github.com/aws/smithy-go v1.20.4 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
-	github.com/bytedance/sonic v1.12.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
-	github.com/casbin/casbin/v2 v2.100.0 // indirect
-	github.com/casbin/gorm-adapter/v3 v3.28.0 // indirect
 	github.com/casbin/govaluate v1.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -108,7 +111,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -121,7 +123,6 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.9.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
@@ -129,11 +130,8 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/datatypes v1.1.1-0.20230130040222-c43177d3cf8c // indirect
 	gorm.io/driver/postgres v1.5.7 // indirect
 	gorm.io/driver/sqlserver v1.5.3 // indirect
-	gorm.io/gen v0.3.26 // indirect
-	gorm.io/hints v1.1.0 // indirect
 	gorm.io/plugin/dbresolver v1.5.0 // indirect
 	modernc.org/libc v1.22.2 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
