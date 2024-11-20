@@ -33,6 +33,7 @@ security:
     private_key: "gfa123456"
   api_key:
     enable: true
+    lookup: "header: X-API-KEY, query: token"
 kafka:
   default:
     brokers:

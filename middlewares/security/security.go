@@ -45,7 +45,7 @@ func init() {
 func newApiKeyValidator() *ApiKeyValidator {
 	config.SetDefault("security.api_key.header_key", "X-Api-Key")
 	headerKey := config.GetString("security.api_key.header_key")
-	return NewApiKeyValidator(headerKey)
+	return NewApiKeyValidator(headerKey, config.GetString("security.api_key.lookup"))
 }
 
 func WithValidator(name string, v Validator) {
