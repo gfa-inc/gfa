@@ -51,7 +51,8 @@ func NewApiKeyValidator(headerKey string, lookup string) *ApiKeyValidator {
 }
 
 func (akv *ApiKeyValidator) Valid(c *gin.Context) error {
-	apiKey := c.GetHeader(akv.HeaderKey)
+	apiKey := akv.GetApiKey(c)
+
 	if apiKey == "" {
 		return ErrNotFoundHeaderApiKey
 	}
@@ -61,4 +62,18 @@ func (akv *ApiKeyValidator) Valid(c *gin.Context) error {
 	}
 
 	return ApiKeyValidateHandler(c, apiKey)
+}
+
+func (akv *ApiKeyValidator) GetApiKey(c *gin.Context) string {
+	headerApiKey := c.GetHeader(akv.HeaderKey)
+	if headerApiKey != "" {
+		return headerApiKey
+	}
+
+	queryApiKey := c.Param(akv.QueryKey)
+	if queryApiKey != "" {
+		return queryApiKey
+	}
+
+	return ""
 }
