@@ -70,7 +70,7 @@ func (akv *ApiKeyValidator) GetApiKey(c *gin.Context) string {
 		return headerApiKey
 	}
 
-	queryApiKey := c.Param(akv.QueryKey)
+	queryApiKey := c.Query(akv.QueryKey)
 	if queryApiKey != "" {
 		return queryApiKey
 	}
