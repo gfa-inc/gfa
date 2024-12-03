@@ -28,11 +28,16 @@ type Dao interface {
 }
 
 type Sorter struct {
-	Field string `form:"sorterField,default=create_time"`
+	Field string `form:"sorterField"`
 	Order string `form:"sorterOrder"`
 }
 
-func (s *Sorter) ToOrderExpr(dao Dao) (field.Expr, error) {
+func (s *Sorter) ToOrderExpr(dao Dao, defaultSorter *Sorter) (field.Expr, error) {
+	if s.Field == "" && defaultSorter != nil {
+		s.Field = defaultSorter.Field
+		s.Order = defaultSorter.Order
+	}
+
 	f, ok := dao.GetFieldByName(s.Field)
 	if !ok {
 		err := core.NewParamErr(fmt.Errorf("field %s not found in table %s", s.Field, dao.TableName()))
