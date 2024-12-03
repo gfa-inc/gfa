@@ -62,6 +62,10 @@ func NewConsumerClient(option ConsumerConfig) *kafka.Reader {
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 	}
 
+	if cfg.GroupID != "" {
+		cfg.StartOffset = kafka.LastOffset
+	}
+
 	cfg.Dialer = fillMechanism(SaslConfig{
 		Mechanism: option.Mechanism,
 		Username:  option.Username,
