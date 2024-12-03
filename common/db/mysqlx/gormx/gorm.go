@@ -32,7 +32,7 @@ type Sorter struct {
 	Order string `form:"sorterOrder"`
 }
 
-func (s *Sorter) ToExpr(dao Dao) (field.Expr, error) {
+func (s *Sorter) ToOrderExpr(dao Dao) (field.Expr, error) {
 	f, ok := dao.GetFieldByName(s.Field)
 	if !ok {
 		err := core.NewParamErr(fmt.Errorf("field %s not found in table %s", s.Field, dao.TableName()))
