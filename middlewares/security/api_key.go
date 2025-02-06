@@ -17,6 +17,7 @@ type ApiKeyValidator struct {
 	Lookup    string
 	HeaderKey string
 	QueryKey  string
+	CookieKey string
 }
 
 func NewApiKeyValidator(headerKey string, lookup string) *ApiKeyValidator {
@@ -44,6 +45,8 @@ func NewApiKeyValidator(headerKey string, lookup string) *ApiKeyValidator {
 				apiKeyValidator.HeaderKey = trimmedFields[1]
 			case "query":
 				apiKeyValidator.QueryKey = trimmedFields[1]
+			case "cookie":
+				apiKeyValidator.CookieKey = trimmedFields[1]
 			}
 		}
 	}
@@ -73,6 +76,11 @@ func (akv *ApiKeyValidator) GetApiKey(c *gin.Context) string {
 	queryApiKey := c.Query(akv.QueryKey)
 	if queryApiKey != "" {
 		return queryApiKey
+	}
+
+	cookieApiKey, err := c.Cookie(akv.CookieKey)
+	if err != nil && cookieApiKey != "" {
+		return cookieApiKey
 	}
 
 	return ""
