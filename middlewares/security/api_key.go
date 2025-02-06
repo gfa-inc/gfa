@@ -79,7 +79,7 @@ func (akv *ApiKeyValidator) GetApiKey(c *gin.Context) string {
 	}
 
 	cookieApiKey, err := c.Cookie(akv.CookieKey)
-	if err != nil && cookieApiKey != "" {
+	if err == nil && cookieApiKey != "" {
 		return cookieApiKey
 	}
 
