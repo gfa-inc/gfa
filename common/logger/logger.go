@@ -227,7 +227,7 @@ func colorByLevel(level zapcore.Level) color.Color {
 func consoleCoreFactory(option Config) zapcore.Core {
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = func(time time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(color.New(color.OpFuzzy).Sprint(time.Format("2006-01-02T15:04:05.000")))
+		enc.AppendString(color.New(color.OpFuzzy).Sprint(time.Format("2006-01-02T15:04:05.999")))
 	}
 	cfg.EncodeLevel = func(level zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(color.New(colorByLevel(level), color.OpBold).Sprintf("%-5s", level.CapitalString()))
