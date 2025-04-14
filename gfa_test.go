@@ -70,7 +70,7 @@ func TestRun(t *testing.T) {
 		Level: logger.ToLevelPtr(zapcore.InfoLevel),
 		Opts: []logger.JsonCoreEncoderConfigFunc{
 			func(cfg *zapcore.EncoderConfig) {
-				cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05Z0700")
+				cfg.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.999Z0700")
 				cfg.TimeKey = "timestamp"
 				cfg.MessageKey = "message"
 				cfg.CallerKey = "logger"
