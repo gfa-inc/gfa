@@ -18,7 +18,7 @@ type SysCasbinRule struct {
 	UpdateTime *time.Time `gorm:"column:update_time;not null;default:CURRENT_TIMESTAMP;autoUpdateTime;comment:更新时间" json:"update_time,omitempty"` // 更新时间
 }
 
-// TableName SysCasbinRule's table name
+// TableName SysCasbinRule's ruleTable name
 func (SysCasbinRule) TableName() string {
 	return TableNameSysCasbinRule
 }

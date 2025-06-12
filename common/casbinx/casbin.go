@@ -15,16 +15,35 @@ type CasbinRuleTable interface {
 	TableName() string
 }
 
-var Enforcer *casbin.Enforcer
+var (
+	Enforcer        *casbin.Enforcer
+	casbinModelConf string
+	ruleTable       CasbinRuleTable
+)
 
 func Setup() {
+	if casbinModelConf == "" {
+		casbinModelConf = string(resources.CasbinModelConf)
+	}
+	if ruleTable == nil {
+		ruleTable = SysCasbinRule{}
+	}
+
 	var err error
-	Enforcer, err = NewEnforcer(mysqlx.Client, SysCasbinRule{}, string(resources.CasbinModelConf))
+	Enforcer, err = NewEnforcer(mysqlx.Client, ruleTable, casbinModelConf)
 
 	if err != nil {
 		logger.Panic(err)
 		return
 	}
+}
+
+func SetCasbinModelConf(mdl string) {
+	casbinModelConf = mdl
+}
+
+func SetCasbinRuleTable(tb CasbinRuleTable) {
+	ruleTable = tb
 }
 
 func NewEnforcer(db *gorm.DB, tb CasbinRuleTable, mdl string) (*casbin.Enforcer, error) {
