@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -32,18 +31,15 @@ func NewS3Client(option Config) (*s3.Client, error) {
 		awsConfig.WithRegion(option.Region),
 		awsConfig.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(option.AK, option.SK, "")),
-		awsConfig.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			return aws.Endpoint{
-				URL:               option.Endpoint,
-				HostnameImmutable: true,
-			}, nil
-		})),
+		awsConfig.WithBaseEndpoint(option.Endpoint),
 	)
 	if err != nil {
 		logger.Error(err)
 		return nil, err
 	}
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, func(options *s3.Options) {
+		options.UsePathStyle = true
+	})
 	logger.Debugf("Connecting to s3 [%s] %s", option.Name, option.Bucket)
 	return client, nil
 }
