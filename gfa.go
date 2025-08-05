@@ -18,16 +18,20 @@ import (
 	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"github.com/gfa-inc/gfa/middlewares/security"
 	"github.com/gfa-inc/gfa/middlewares/session"
+	"github.com/gfa-inc/gfa/utils/syncx"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 )
 
 var (
-	gfa Gfa
+	gfa       Gfa
+	cancelCtx context.Context
+	cancelWg  sync.WaitGroup
 )
 
 type Gfa struct {
@@ -72,7 +76,6 @@ func (g *Gfa) WithPostSetup(setup func()) {
 }
 
 func (g *Gfa) Run() {
-
 	addr := config.GetString("server.addr")
 
 	gracefulServer, err := graceful.New(g.Engine, graceful.WithAddr(addr))
@@ -82,15 +85,20 @@ func (g *Gfa) Run() {
 	}
 	defer gracefulServer.Close()
 
+	var stop context.CancelFunc
 	// graceful shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	cancelCtx, stop = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	logger.Infof("Listen and Serving HTTP on http://%s", addr)
-	err = gracefulServer.RunWithContext(ctx)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		logger.Panic(err)
-	}
+	syncx.All(func() {
+		logger.Infof("Listen and Serving HTTP on http://%s", addr)
+		err = gracefulServer.RunWithContext(cancelCtx)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			logger.Panic(err)
+		}
+	}, func() {
+		cancelWg.Wait()
+	})
 }
 
 func parseLoggerConfig() logger.OptionFunc {
@@ -209,4 +217,22 @@ func AddController(controller core.Controller) {
 
 func AddControllers(controllers ...core.Controller) {
 	gfa.controllers = append(gfa.controllers, controllers...)
+}
+
+// Async runs a function asynchronously and tracks its completion for graceful shutdown.
+func Async(fn func()) {
+	cancelWg.Add(1)
+	go func() {
+		defer cancelWg.Done()
+		fn()
+	}()
+}
+
+// AsyncWithCancel runs a function asynchronously with a cancelable context and tracks its completion for graceful shutdown.
+func AsyncWithCancel(fn func(cancelCtx context.Context)) {
+	cancelWg.Add(1)
+	go func() {
+		defer cancelWg.Done()
+		fn(cancelCtx)
+	}()
 }
