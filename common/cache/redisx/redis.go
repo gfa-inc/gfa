@@ -2,11 +2,12 @@ package redisx
 
 import (
 	"context"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
-	"strings"
 )
 
 var (

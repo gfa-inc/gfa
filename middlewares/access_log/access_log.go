@@ -1,10 +1,11 @@
 package access_log
 
 import (
+	"time"
+
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 var (

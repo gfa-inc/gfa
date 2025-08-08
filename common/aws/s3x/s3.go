@@ -2,13 +2,14 @@ package s3x
 
 import (
 	"context"
+	"strings"
+
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/samber/lo"
-	"strings"
 )
 
 var (

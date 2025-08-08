@@ -2,11 +2,12 @@ package kafkax
 
 import (
 	"context"
+	"testing"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSetup(t *testing.T) {

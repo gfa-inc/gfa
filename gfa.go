@@ -3,6 +3,12 @@ package gfa
 import (
 	"context"
 	"errors"
+	"log"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
+
 	"github.com/gfa-inc/gfa/common/aws"
 	"github.com/gfa-inc/gfa/common/cache"
 	"github.com/gfa-inc/gfa/common/config"
@@ -21,11 +27,6 @@ import (
 	"github.com/gfa-inc/gfa/utils/syncx"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
-	"log"
-	"os/signal"
-	"strings"
-	"sync"
-	"syscall"
 )
 
 var (

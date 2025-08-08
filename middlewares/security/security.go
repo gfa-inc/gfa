@@ -1,13 +1,14 @@
 package security
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
-	"net/http"
-	"strings"
 )
 
 type Validator interface {

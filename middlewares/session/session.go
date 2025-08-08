@@ -1,13 +1,14 @@
 package session
 
 import (
+	"net/http"
+
 	"github.com/boj/redistore"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 var DefaultTimeout = 86400

@@ -1,11 +1,12 @@
 package middlewares
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 func OnError() gin.HandlerFunc {

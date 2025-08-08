@@ -3,12 +3,13 @@ package cache
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/bytedance/sonic"
 	"github.com/gfa-inc/gfa/common/cache/hash"
 	"github.com/gfa-inc/gfa/common/cache/redisx"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 func Setup() {

@@ -1,6 +1,9 @@
 package validatorx
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/en"
@@ -8,8 +11,6 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zhtrans "github.com/go-playground/validator/v10/translations/zh"
-	"reflect"
-	"strings"
 )
 
 var (

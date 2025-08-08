@@ -1,8 +1,9 @@
 package router
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMatcher_Match(t *testing.T) {

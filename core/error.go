@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/gfa-inc/gfa/common/validatorx"
 	"github.com/go-playground/validator/v10"
 )

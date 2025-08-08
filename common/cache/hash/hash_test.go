@@ -2,10 +2,11 @@ package hash
 
 import (
 	"context"
+	"testing"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestHash(t *testing.T) {

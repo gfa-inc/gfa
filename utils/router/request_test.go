@@ -1,9 +1,10 @@
 package router
 
 import (
+	"testing"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
-	"testing"
 )
 
 func TestRequestMatcher_Match(t *testing.T) {

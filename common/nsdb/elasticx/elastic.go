@@ -3,13 +3,14 @@ package elasticx
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/samber/lo"
-	"net/http"
-	"strings"
-	"time"
 )
 
 var (

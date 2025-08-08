@@ -2,6 +2,9 @@ package gfa
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/gfa-inc/gfa/common/db/mysqlx"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/common/mq/kafkax"
@@ -12,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap/zapcore"
-	"testing"
 )
 
 type testController struct {
@@ -82,5 +84,15 @@ func TestRun(t *testing.T) {
 
 	AddController(&testController{})
 
-	Run()
+	runFailCh := make(chan struct{})
+	go func() {
+		Run()
+		<-runFailCh
+	}()
+	select {
+	case <-runFailCh:
+		t.Fatal("Run failed")
+	case <-time.NewTimer(5 * time.Second).C:
+		t.Log("gfa exits normally")
+	}
 }

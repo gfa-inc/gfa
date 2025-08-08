@@ -1,13 +1,14 @@
 package kafkax
 
 import (
+	"log"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/ptr"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
-	"log"
 )
 
 var (

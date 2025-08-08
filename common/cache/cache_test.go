@@ -2,11 +2,12 @@ package cache
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestKey(t *testing.T) {

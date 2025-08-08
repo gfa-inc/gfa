@@ -2,14 +2,15 @@ package logger
 
 import (
 	"context"
-	"github.com/gookit/color"
-	"github.com/samber/lo"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gookit/color"
+	"github.com/samber/lo"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (

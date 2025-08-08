@@ -2,8 +2,9 @@ package core
 
 import (
 	"context"
-	"github.com/gfa-inc/gfa/middlewares/request_id"
 	"net/http"
+
+	"github.com/gfa-inc/gfa/middlewares/request_id"
 
 	"github.com/gin-gonic/gin"
 )

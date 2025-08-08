@@ -2,10 +2,11 @@ package security
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
-	"strings"
 )
 
 var (

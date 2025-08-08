@@ -2,10 +2,11 @@ package router
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils/http_method"
-	"strings"
 )
 
 type RequestMatcher struct {

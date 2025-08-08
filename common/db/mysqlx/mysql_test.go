@@ -1,10 +1,11 @@
 package mysqlx
 
 import (
+	"testing"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewMysqlClient(t *testing.T) {

@@ -2,13 +2,14 @@ package s3x
 
 import (
 	"context"
+	"strings"
+	"testing"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func TestSetup(t *testing.T) {

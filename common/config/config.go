@@ -2,6 +2,9 @@ package config
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gfa-inc/gfa/utils"
 	"github.com/go-viper/mapstructure/v2"
@@ -11,8 +14,6 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"github.com/samber/lo"
-	"path/filepath"
-	"strings"
 )
 
 var (

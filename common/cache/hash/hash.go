@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"github.com/gfa-inc/gfa/common/logger"
 	"hash/fnv"
 	"strconv"
+
+	"github.com/gfa-inc/gfa/common/logger"
 )
 
 func Hash[T any](ctx context.Context, value T) (string, error) {

@@ -1,12 +1,13 @@
 package request_id
 
 import (
+	"strings"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"strings"
 )
 
 var ContextKey string

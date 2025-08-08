@@ -2,6 +2,7 @@ package security
 
 import (
 	"errors"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )

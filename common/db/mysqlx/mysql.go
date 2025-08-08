@@ -3,6 +3,9 @@ package mysqlx
 import (
 	"context"
 	"database/sql"
+	"strings"
+	"time"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/samber/lo"
@@ -10,8 +13,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	glog "gorm.io/gorm/logger"
-	"strings"
-	"time"
 )
 
 var (

@@ -1,12 +1,13 @@
 package casbinx
 
 import (
+	"testing"
+
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/db"
 	"github.com/gfa-inc/gfa/common/logger"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSetup(t *testing.T) {
