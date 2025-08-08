@@ -1,6 +1,6 @@
 module github.com/gfa-inc/gfa
 
-go 1.23.2
+go 1.23.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.37.2
