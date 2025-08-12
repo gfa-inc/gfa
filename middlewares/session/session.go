@@ -24,6 +24,7 @@ type RedisConfig struct {
 	MaxIdleConnSize int
 	Network         string
 	Addrs           []string
+	Username        string
 	Password        string
 }
 
@@ -44,6 +45,7 @@ func Session() gin.HandlerFunc {
 		logger.Panic("No session config found")
 	}
 	newRedisStore, err := redis.NewStore(option.Redis.MaxIdleConnSize, option.Redis.Network, option.Redis.Addrs[0],
+		option.Redis.Username,
 		option.Redis.Password, []byte(option.PrivateKey))
 	if err != nil {
 		logger.Panic(err)
@@ -58,7 +60,7 @@ func Session() gin.HandlerFunc {
 		Domain:   option.Domain,
 	})
 
-	_, store := redis.GetRedisStore(newRedisStore)
+	store, _ := redis.GetRedisStore(newRedisStore)
 	store.SetMaxLength(1024 * 1024)
 	store.SetKeyPrefix(config.GetString("name"))
 	store.SetSerializer(redistore.JSONSerializer{})
