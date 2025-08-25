@@ -74,7 +74,7 @@ func Security() gin.HandlerFunc {
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
-		if matcher.Match(c.Request.RequestURI, c.Request.Method) {
+		if matcher.Match(c.FullPath(), c.Request.Method) {
 			c.Set(PermittedFlag, true)
 			c.Next()
 			return
