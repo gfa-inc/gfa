@@ -1,4 +1,4 @@
-package access_log
+package accesslog
 
 import (
 	"time"

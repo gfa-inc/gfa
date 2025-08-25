@@ -6,7 +6,7 @@ import (
 
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
-	"github.com/gfa-inc/gfa/utils/http_method"
+	"github.com/gfa-inc/gfa/utils/httpmethod"
 )
 
 type RequestMatcher struct {
@@ -25,7 +25,7 @@ func (rm *RequestMatcher) AddRoute(route string, method any) {
 		route = strings.Join([]string{basePath, route}, "")
 	}
 
-	normalizedMethods, err := http_method.Normalize(method)
+	normalizedMethods, err := httpmethod.Normalize(method)
 	if err != nil {
 		logger.Error(err)
 		return

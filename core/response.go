@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gfa-inc/gfa/middlewares/request_id"
+	"github.com/gfa-inc/gfa/middlewares/requestid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +24,7 @@ type PaginatedData[T any] struct {
 }
 
 func NewSucceedResponse[T any](c context.Context, data T) Response[T] {
-	traceID, _ := c.Value(request_id.ContextKey).(string)
+	traceID, _ := c.Value(requestid.ContextKey).(string)
 	return Response[T]{
 		Success: true,
 		Code:    "0",
@@ -35,7 +35,7 @@ func NewSucceedResponse[T any](c context.Context, data T) Response[T] {
 }
 
 func NewFailedResponse(c context.Context, code string, message string) Response[any] {
-	traceID, _ := c.Value(request_id.ContextKey).(string)
+	traceID, _ := c.Value(requestid.ContextKey).(string)
 	return Response[any]{
 		Success: false,
 		Code:    code,

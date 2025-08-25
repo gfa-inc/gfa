@@ -20,8 +20,8 @@ import (
 	"github.com/gfa-inc/gfa/common/validatorx"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares"
-	"github.com/gfa-inc/gfa/middlewares/access_log"
-	"github.com/gfa-inc/gfa/middlewares/request_id"
+	"github.com/gfa-inc/gfa/middlewares/accesslog"
+	"github.com/gfa-inc/gfa/middlewares/requestid"
 	"github.com/gfa-inc/gfa/middlewares/security"
 	"github.com/gfa-inc/gfa/middlewares/session"
 	"github.com/gfa-inc/gfa/utils/syncx"
@@ -180,9 +180,9 @@ func Default() *Gfa {
 	// onerror
 	gfa.Engine.Use(middlewares.OnError())
 	// requestid
-	gfa.Engine.Use(request_id.RequestID())
+	gfa.Engine.Use(requestid.RequestID())
 	// access log
-	gfa.Engine.Use(access_log.AccessLog())
+	gfa.Engine.Use(accesslog.AccessLog())
 	// session
 	if session.Enabled() {
 		gfa.Engine.Use(session.Session())

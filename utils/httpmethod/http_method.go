@@ -1,4 +1,4 @@
-package http_method
+package httpmethod
 
 import (
 	"fmt"
