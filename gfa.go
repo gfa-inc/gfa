@@ -14,6 +14,7 @@ import (
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/db"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/common/messenger/mailx"
 	"github.com/gfa-inc/gfa/common/mq"
 	"github.com/gfa-inc/gfa/common/nsdb"
 	"github.com/gfa-inc/gfa/common/swag"
@@ -157,6 +158,8 @@ func Default() *Gfa {
 	validatorx.Setup()
 
 	aws.Setup()
+
+	mailx.Setup()
 
 	// post setups
 	for _, setup := range gfa.postSetups {
