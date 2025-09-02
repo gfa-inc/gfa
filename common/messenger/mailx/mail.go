@@ -1,7 +1,9 @@
 package mailx
 
 import (
+	"context"
 	"strings"
+	"time"
 
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
@@ -27,7 +29,9 @@ type Config struct {
 		Enable bool
 		Port   int
 	}
-	Default bool
+	Default           bool
+	Timeout           int
+	ConnectionTimeout int
 }
 
 func NewClient(option Config) (*mail.Client, error) {
@@ -59,11 +63,30 @@ func NewClient(option Config) (*mail.Client, error) {
 		}
 	}
 
+	if option.Timeout != 0 {
+		opts = append(opts, mail.WithTimeout((time.Duration(option.Timeout))*time.Second))
+	}
+
 	client, err := mail.NewClient(option.Host, opts...)
 	if err != nil {
 		logger.Errorf("fail to new client %s, %s", option.Name, err)
 		return nil, err
 	}
+
+	timeoutCtx := context.Background()
+	if option.ConnectionTimeout != 0 {
+		var cancel context.CancelFunc
+		timeoutCtx, cancel = context.WithTimeout(context.Background(), time.Duration(option.ConnectionTimeout)*time.Second)
+		defer cancel()
+	}
+
+	err = client.DialWithContext(timeoutCtx)
+	if err != nil {
+		logger.Errorf("fail to dial mail server for client %s, %s", option.Name, err)
+		return nil, err
+	}
+
+	logger.Infof("mail client %s has been initialized, host: %s", option.Name, option.Host)
 
 	return client, nil
 }
