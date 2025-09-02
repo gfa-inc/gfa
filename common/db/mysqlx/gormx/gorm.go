@@ -13,6 +13,7 @@ type Pagination struct {
 	PageSize *int `form:"pageSize,default=20"`
 }
 
+// ToOffsetAndLimit converts the current page and page size to offset and limit for database queries.
 func (p *Pagination) ToOffsetAndLimit() (int, int) {
 	offset := (*p.Current - 1) * (*p.PageSize)
 	limit := *p.PageSize
@@ -55,6 +56,20 @@ func (s *Sorter) ToOrderExpr(dao Dao, defaultSorter *Sorter) (field.Expr, error)
 		return f.Desc(), nil
 	} else {
 		return f.Desc(), nil
+	}
+}
+
+func NewDescendSorter(field string) *Sorter {
+	return &Sorter{
+		Field: field,
+		Order: "descend",
+	}
+}
+
+func NewAscendSorter(field string) *Sorter {
+	return &Sorter{
+		Field: field,
+		Order: "ascend",
 	}
 }
 
