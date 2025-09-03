@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+	"testing"
 
 	"github.com/gfa-inc/gfa/common/aws"
 	"github.com/gfa-inc/gfa/common/cache"
@@ -25,6 +27,7 @@ import (
 	"github.com/gfa-inc/gfa/middlewares/requestid"
 	"github.com/gfa-inc/gfa/middlewares/security"
 	"github.com/gfa-inc/gfa/middlewares/session"
+	"github.com/gfa-inc/gfa/utils"
 	"github.com/gfa-inc/gfa/utils/syncx"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
@@ -239,4 +242,20 @@ func AsyncWithCancel(fn func(cancelCtx context.Context)) {
 		defer cancelWg.Done()
 		fn(cancelCtx)
 	}()
+}
+
+func Test(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	roots := utils.FindModuleRoot(wd)
+	if roots == "" {
+		t.Fatal("cannot find module root")
+	}
+
+	config.Setup(config.WithPath(roots), config.WithPath(roots+"/configs"))
+
+	logger.Setup(ParseLoggerConfig())
 }
