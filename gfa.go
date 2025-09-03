@@ -103,15 +103,6 @@ func (g *Gfa) Run() {
 	})
 }
 
-func parseLoggerConfig() logger.OptionFunc {
-	return func(option *logger.Config) {
-		err := config.UnmarshalKey("logger", option)
-		if err != nil {
-			log.Panic(err)
-		}
-	}
-}
-
 func WithGinOption(opts ...gin.OptionFunc) {
 	gfa.WithGinOption(opts...)
 }
@@ -136,12 +127,21 @@ func WithPostSetup(setups ...func()) {
 	}
 }
 
+func ParseLoggerConfig() logger.OptionFunc {
+	return func(option *logger.Config) {
+		err := config.UnmarshalKey("logger", option)
+		if err != nil {
+			log.Panic(err)
+		}
+	}
+}
+
 func Default() *Gfa {
 	config.Setup(gfa.cfgOpts...)
 
 	printBanner()
 
-	logger.Setup(parseLoggerConfig())
+	logger.Setup(ParseLoggerConfig())
 
 	for _, setup := range gfa.setups {
 		setup()
