@@ -226,6 +226,25 @@ func AddControllers(controllers ...core.Controller) {
 	gfa.controllers = append(gfa.controllers, controllers...)
 }
 
+type GroupController struct {
+	Group       string
+	Controllers []core.Controller
+}
+
+func (gc *GroupController) Setup(r *gin.RouterGroup) {
+	gr := r.Group(gc.Group)
+	for _, controller := range gc.Controllers {
+		controller.Setup(gr)
+	}
+}
+
+func AddGroupControllers(group string, controllers ...core.Controller) {
+	gfa.controllers = append(gfa.controllers, &GroupController{
+		Group:       group,
+		Controllers: controllers,
+	})
+}
+
 // Async runs a function asynchronously and tracks its completion for graceful shutdown.
 func Async(fn func()) {
 	cancelWg.Add(1)
