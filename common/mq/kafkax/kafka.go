@@ -87,7 +87,7 @@ func NewProducerClient(option ProducerConfig) *kafka.Writer {
 	cfg := kafka.WriterConfig{
 		Brokers:     option.Brokers,
 		Topic:       option.Topic,
-		Balancer:    &kafka.LeastBytes{},
+		Balancer:    &kafka.Hash{},
 		Logger:      kafka.LoggerFunc(logger.Debugf),
 		ErrorLogger: kafka.LoggerFunc(logger.Errorf),
 		Async:       *option.Async,
