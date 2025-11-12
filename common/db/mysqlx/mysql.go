@@ -160,8 +160,8 @@ func (g *gormLogger) Trace(c context.Context, begin time.Time, fc func() (sql st
 func AssignmentNotEmptyColumns(names []string) clause.Set {
 	values := make(map[string]any)
 	for _, name := range names {
-		values[name] = fmt.Sprintf("CASE WHEN VALUES(%s) IS NOT NULL AND TRIM(VALUES(%s)) != '' THEN VALUES(%s) ELSE %s END",
-			name, name, name, name)
+		values[name] = gorm.Expr(fmt.Sprintf("CASE WHEN VALUES(%s) IS NOT NULL AND TRIM(VALUES(%s)) != '' THEN VALUES(%s) ELSE %s END",
+			name, name, name, name))
 	}
 
 	return clause.Assignments(values)
