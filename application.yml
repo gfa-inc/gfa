@@ -30,7 +30,13 @@ session:
     password: "gfa"
 security:
   jwt:
-    private_key: "gfa123456"
+    private_key: "gfa123456"                           # JWT 私钥（必填）
+    expire_time: 3600                                  # Token 过期时间（秒），默认 1 小时
+    token_lookup: "header:Authorization"               # Token 查找位置，支持 header/query/cookie
+    auto_refresh: true                                 # 是否启用自动续期
+    refresh_threshold: 1800                            # 续期阈值（秒），剩余时间少于此值时自动续期
+    refresh_header: "X-New-Token"                      # 返回新 Token 的响应头名称
+    signing_method: "HS256"                            # 签名算法：HS256/HS384/HS512
   api_key:
     enable: true
     lookup: "header: X-API-KEY, query: token"
