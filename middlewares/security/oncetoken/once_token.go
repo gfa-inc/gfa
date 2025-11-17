@@ -130,7 +130,7 @@ func (ot *OnceTokenValidator) Valid(c *gin.Context) error {
 	}
 
 	// Validate and consume token
-	path, err := ot.ValidateAndConsumeToken(c.Request.Context(), tokenString, c.FullPath())
+	path, err := ot.ValidateAndConsumeToken(c.Request.Context(), tokenString, c.Request.URL.Path)
 	if err != nil {
 		return err
 	}
