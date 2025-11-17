@@ -1,4 +1,4 @@
-package once_token
+package oncetoken
 
 import (
 	"context"
