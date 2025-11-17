@@ -1,4 +1,4 @@
-package security
+package once_token
 
 import (
 	"context"
