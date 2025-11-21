@@ -10,7 +10,7 @@ import (
 
 var (
 	whitelistMatcher *router.RequestMatcher
-	ClientIPKey      = "clientIP"
+	ClientIPKey      = "client_ip"
 	LatencyKey       = "latency"
 )
 

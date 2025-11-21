@@ -20,7 +20,7 @@ type Config struct {
 func RequestID() gin.HandlerFunc {
 	option := Config{
 		HeaderKey:  "X-Request-ID",
-		ContextKey: "traceID",
+		ContextKey: "trace_id",
 	}
 	err := config.UnmarshalKey("requestid", &option)
 	if err != nil {
