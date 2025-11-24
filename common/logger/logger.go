@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -225,6 +227,176 @@ func colorByLevel(level zapcore.Level) color.Color {
 	}
 }
 
+// kvConsoleEncoder wraps zapcore encoder to output fields in key=value format
+type kvConsoleEncoder struct {
+	zapcore.Encoder
+	cfg    zapcore.EncoderConfig
+	fields map[string]interface{}
+}
+
+func newKVConsoleEncoder(cfg zapcore.EncoderConfig) *kvConsoleEncoder {
+	return &kvConsoleEncoder{
+		Encoder: zapcore.NewConsoleEncoder(cfg),
+		cfg:     cfg,
+		fields:  make(map[string]interface{}),
+	}
+}
+
+func (enc *kvConsoleEncoder) Clone() zapcore.Encoder {
+	clone := &kvConsoleEncoder{
+		Encoder: enc.Encoder.Clone(),
+		cfg:     enc.cfg,
+		fields:  make(map[string]interface{}, len(enc.fields)),
+	}
+	// Copy existing fields
+	for k, v := range enc.fields {
+		clone.fields[k] = v
+	}
+	return clone
+}
+
+// All Add* methods simply store the value in the map
+func (enc *kvConsoleEncoder) AddString(k, v string)                 { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddBool(k string, v bool)              { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddInt(k string, v int)                { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddInt64(k string, v int64)            { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddInt32(k string, v int32)            { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddInt16(k string, v int16)            { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddInt8(k string, v int8)              { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUint(k string, v uint)              { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUint64(k string, v uint64)          { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUint32(k string, v uint32)          { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUint16(k string, v uint16)          { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUint8(k string, v uint8)            { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddUintptr(k string, v uintptr)        { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddFloat64(k string, v float64)        { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddFloat32(k string, v float32)        { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddComplex128(k string, v complex128)  { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddComplex64(k string, v complex64)    { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddDuration(k string, v time.Duration) { enc.fields[k] = v }
+func (enc *kvConsoleEncoder) AddTime(k string, v time.Time) {
+	enc.fields[k] = v.Format(time.RFC3339Nano)
+}
+func (enc *kvConsoleEncoder) AddBinary(k string, v []byte)     { enc.fields[k] = fmt.Sprintf("%x", v) }
+func (enc *kvConsoleEncoder) AddByteString(k string, v []byte) { enc.fields[k] = string(v) }
+func (enc *kvConsoleEncoder) AddReflected(k string, v interface{}) error {
+	enc.fields[k] = v
+	return nil
+}
+func (enc *kvConsoleEncoder) AddArray(k string, v zapcore.ArrayMarshaler) error {
+	enc.fields[k] = v
+	return nil
+}
+func (enc *kvConsoleEncoder) AddObject(k string, v zapcore.ObjectMarshaler) error {
+	enc.fields[k] = v
+	return nil
+}
+func (enc *kvConsoleEncoder) OpenNamespace(string) {}
+
+func (enc *kvConsoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
+	line := buffer.NewPool().Get()
+
+	// Helper to encode time/level/caller
+	encodeField := func(fn func(zapcore.PrimitiveArrayEncoder)) string {
+		arr := &arrayEncoder{}
+		fn(arr)
+		if len(arr.elems) > 0 {
+			return arr.elems[0]
+		}
+		return ""
+	}
+
+	// Encode time
+	if enc.cfg.TimeKey != "" && enc.cfg.EncodeTime != nil {
+		if s := encodeField(func(arr zapcore.PrimitiveArrayEncoder) {
+			enc.cfg.EncodeTime(entry.Time, arr)
+		}); s != "" {
+			line.AppendString(s)
+			line.AppendByte(' ')
+		}
+	}
+
+	// Encode level
+	if enc.cfg.LevelKey != "" && enc.cfg.EncodeLevel != nil {
+		if s := encodeField(func(arr zapcore.PrimitiveArrayEncoder) {
+			enc.cfg.EncodeLevel(entry.Level, arr)
+		}); s != "" {
+			line.AppendString(s)
+			line.AppendByte(' ')
+		}
+	}
+
+	// Encode caller
+	if entry.Caller.Defined && enc.cfg.CallerKey != "" && enc.cfg.EncodeCaller != nil {
+		if s := encodeField(func(arr zapcore.PrimitiveArrayEncoder) {
+			enc.cfg.EncodeCaller(entry.Caller, arr)
+		}); s != "" {
+			line.AppendString(s)
+			line.AppendByte(' ')
+		}
+	}
+
+	// Add message
+	if entry.Message != "" {
+		line.AppendString(entry.Message)
+	}
+
+	// Collect fields
+	for _, field := range fields {
+		field.AddTo(enc)
+	}
+
+	// Output fields in key=value format
+	if len(enc.fields) > 0 {
+		// Get sorted keys for consistent output
+		keys := make([]string, 0, len(enc.fields))
+		for k := range enc.fields {
+			keys = append(keys, k)
+		}
+
+		for _, k := range keys {
+			line.AppendByte(' ')
+			line.AppendString(fmt.Sprintf("%s=%v", k, enc.fields[k]))
+		}
+
+		// Clear fields for next use
+		enc.fields = make(map[string]interface{})
+	}
+
+	// Add stack trace
+	if entry.Stack != "" {
+		line.AppendByte('\n')
+		line.AppendString(entry.Stack)
+	}
+
+	line.AppendString(zapcore.DefaultLineEnding)
+	return line, nil
+}
+
+// arrayEncoder is a simple helper to capture encoded values
+type arrayEncoder struct{ elems []string }
+
+func (a *arrayEncoder) AppendString(v string)          { a.elems = append(a.elems, v) }
+func (a *arrayEncoder) AppendBool(v bool)              { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendByteString(v []byte)      { a.elems = append(a.elems, string(v)) }
+func (a *arrayEncoder) AppendComplex128(v complex128)  { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendComplex64(v complex64)    { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendFloat64(v float64)        { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendFloat32(v float32)        { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendInt(v int)                { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendInt64(v int64)            { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendInt32(v int32)            { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendInt16(v int16)            { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendInt8(v int8)              { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUint(v uint)              { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUint64(v uint64)          { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUint32(v uint32)          { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUint16(v uint16)          { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUint8(v uint8)            { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendUintptr(v uintptr)        { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendDuration(v time.Duration) { a.elems = append(a.elems, fmt.Sprint(v)) }
+func (a *arrayEncoder) AppendTime(v time.Time)         { a.elems = append(a.elems, fmt.Sprint(v)) }
+
 func consoleCoreFactory(option Config) zapcore.Core {
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = func(time time.Time, enc zapcore.PrimitiveArrayEncoder) {
@@ -238,7 +410,8 @@ func consoleCoreFactory(option Config) zapcore.Core {
 	}
 	cfg.ConsoleSeparator = " "
 
-	consoleEncoder := zapcore.NewConsoleEncoder(cfg)
+	// Use custom kvConsoleEncoder to output fields in key=value format
+	consoleEncoder := newKVConsoleEncoder(cfg)
 	consoleSync := zapcore.AddSync(os.Stdout)
 
 	level, err := zapcore.ParseLevel(option.Level)
