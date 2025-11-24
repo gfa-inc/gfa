@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -10,23 +11,54 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
 )
 
 var (
-	globalLogger *Logger
-	coreMap      map[string]coreFactory
+	globalLogger         *Logger
+	coreMap              map[string]coreFactory
+	globalTracerConfig   *TracingConfig
+	globalTracerProvider *trace.TracerProvider
 )
 
 type coreFactory func(option Config) zapcore.Core
+
+// Tracing keys
+const (
+	TraceIDKey = "trace_id"
+	SpanIDKey  = "span_id"
+)
+
+// TracingConfig controls distributed tracing behavior
+type TracingConfig struct {
+	// Enabled enables tracing integration
+	Enabled bool
+
+	// PreferOtelSpan: if true, prefer extracting from otel span over context.Value
+	// nil means default to true (use otel span first, fallback to context.Value)
+	// Set to &false explicitly if you want to prefer context.Value
+	PreferOtelSpan *bool
+
+	// TracerProvider: custom OpenTelemetry TracerProvider
+	// If nil, a default TracerProvider will be created automatically in New()
+	TracerProvider oteltrace.TracerProvider
+
+	// TracerName: tracer name for otel.Tracer()
+	// Default: "default"
+	TracerName string
+}
 
 type Config struct {
 	ServiceName   string            // service name
 	Level         string            // logger level
 	CtxKeys       []string          // context key which will be logged from context
 	CtxKeyMapping map[string]string // context key mapping
+	Tracing       *TracingConfig    // tracing configuration (optional)
 }
 
 type Logger struct {
@@ -34,6 +66,7 @@ type Logger struct {
 	level         zapcore.Level
 	CtxKeys       []string
 	CtxKeyMapping map[string]string
+	tracingConfig *TracingConfig
 }
 
 func New(option Config) *Logger {
@@ -46,6 +79,7 @@ func New(option Config) *Logger {
 		level:         level,
 		CtxKeys:       option.CtxKeys,
 		CtxKeyMapping: option.CtxKeyMapping,
+		tracingConfig: initializeTracingConfig(option.Tracing),
 	}
 	core := zapcore.NewTee(lo.Map(lo.Entries(coreMap), func(entry lo.Entry[string, coreFactory], _ int) zapcore.Core {
 		return entry.Value(option)
@@ -55,6 +89,38 @@ func New(option Config) *Logger {
 		zap.AddStacktrace(zap.NewAtomicLevelAt(zapcore.ErrorLevel))).Sugar()
 
 	return l
+}
+
+// initializeTracingConfig initializes tracing configuration with defaults
+// Tracing is enabled by default if not explicitly configured
+func initializeTracingConfig(cfg *TracingConfig) *TracingConfig {
+	// If no config provided, enable tracing by default
+	if cfg == nil {
+		defaultTrue := true
+		cfg = &TracingConfig{
+			Enabled:        true, // Default: enabled
+			PreferOtelSpan: &defaultTrue,
+		}
+	}
+
+	// Set default PreferOtelSpan if not specified
+	if cfg.PreferOtelSpan == nil {
+		defaultTrue := true
+		cfg.PreferOtelSpan = &defaultTrue
+	}
+
+	// Initialize default TracerProvider if tracing is enabled and provider not set
+	if cfg.Enabled && cfg.TracerProvider == nil {
+		if globalTracerProvider == nil {
+			globalTracerProvider = trace.NewTracerProvider(
+				trace.WithSampler(trace.AlwaysSample()),
+			)
+			otel.SetTracerProvider(globalTracerProvider)
+		}
+		cfg.TracerProvider = globalTracerProvider
+	}
+
+	return cfg
 }
 
 func NewBasic(option Config) *Logger {
@@ -103,13 +169,68 @@ func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 	}
 
 	newLogger := l.inner
+
+	// Handle tracing if enabled
+	if l.tracingConfig != nil && l.tracingConfig.Enabled {
+		traceID, spanID := l.extractTraceInfo(ctx)
+
+		if traceID != "" {
+			newLogger = newLogger.With(l.getKeyName(TraceIDKey), traceID)
+		}
+		if spanID != "" {
+			newLogger = newLogger.With(l.getKeyName(SpanIDKey), spanID)
+		}
+	}
+
+	// Add other context keys
 	for _, v := range l.CtxKeys {
+		// Skip trace_id/span_id if already handled by tracing config
+		if l.tracingConfig != nil && l.tracingConfig.Enabled {
+			if v == TraceIDKey || v == SpanIDKey {
+				continue
+			}
+		}
+
 		if val := ctx.Value(v); val != nil {
 			newLogger = newLogger.With(l.getKeyName(v), val)
 		}
 	}
 
 	return newLogger
+}
+
+// extractTraceInfo intelligently extracts trace_id and span_id from context
+// Priority: trace_id from context.Value first, span_id from oteltrace first
+func (l *Logger) extractTraceInfo(ctx context.Context) (traceID string, spanID string) {
+	// trace_id: prioritize context.Value
+	if v := ctx.Value(TraceIDKey); v != nil {
+		if s, ok := v.(string); ok && s != "" {
+			traceID = s
+		}
+	}
+	// If not found in context.Value, try otel span
+	if traceID == "" {
+		span := oteltrace.SpanFromContext(ctx)
+		if span.SpanContext().IsValid() {
+			traceID = span.SpanContext().TraceID().String()
+		}
+	}
+
+	// span_id: prioritize oteltrace
+	span := oteltrace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		spanID = span.SpanContext().SpanID().String()
+	}
+	// If not found in otel span, try context.Value
+	if spanID == "" {
+		if v := ctx.Value(SpanIDKey); v != nil {
+			if s, ok := v.(string); ok {
+				spanID = s
+			}
+		}
+	}
+
+	return traceID, spanID
 }
 
 func (l *Logger) Printf(ctx context.Context, format string, args ...any) {
@@ -500,6 +621,7 @@ func Setup(opts ...OptionFunc) {
 		opt(&option)
 	}
 	globalLogger = New(option)
+	globalTracerConfig = option.Tracing
 
 	Debugf("Added logger core: %s", strings.Join(lo.Keys(coreMap), ", "))
 
@@ -637,4 +759,148 @@ func AddContextKey(key string) {
 	if globalLogger != nil {
 		globalLogger.AddContextKey(key)
 	}
+}
+
+// ===== OpenTelemetry Tracing Helper Functions =====
+
+// GetTracer returns the configured OpenTelemetry tracer
+func GetTracer() oteltrace.Tracer {
+	if globalTracerConfig == nil {
+		return otel.GetTracerProvider().Tracer("default")
+	}
+
+	tracerName := globalTracerConfig.TracerName
+	if tracerName == "" {
+		tracerName = "default"
+	}
+
+	if globalTracerConfig.TracerProvider != nil {
+		return globalTracerConfig.TracerProvider.Tracer(tracerName)
+	}
+
+	return otel.GetTracerProvider().Tracer(tracerName)
+}
+
+// StartSpan starts a new OpenTelemetry span
+// Convenience wrapper around tracer.Start()
+func StartSpan(ctx context.Context, spanName string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return GetTracer().Start(ctx, spanName, opts...)
+}
+
+// GetTraceID extracts trace_id from context (otel span or context.Value)
+func GetTraceID(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	// Try otel span first (standard way)
+	span := oteltrace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		return span.SpanContext().TraceID().String()
+	}
+
+	// Fallback to context.Value (for middleware compatibility)
+	if v := ctx.Value(TraceIDKey); v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+
+	return ""
+}
+
+// GetSpanID extracts span_id from context (otel span or context.Value)
+func GetSpanID(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	// Try otel span first (standard way)
+	span := oteltrace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		return span.SpanContext().SpanID().String()
+	}
+
+	// Fallback to context.Value (for middleware compatibility)
+	if v := ctx.Value(SpanIDKey); v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+
+	return ""
+}
+
+// WithTraceID adds trace_id to context using context.Value
+// For middleware that extracts trace_id from HTTP headers
+func WithTraceID(ctx context.Context, traceID string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, TraceIDKey, traceID)
+}
+
+// WithSpanID adds span_id to context using context.Value
+// For middleware that extracts span_id from HTTP headers
+func WithSpanID(ctx context.Context, spanID string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, SpanIDKey, spanID)
+}
+
+// InjectTraceContext creates a context with manually set trace_id/span_id as otel span context
+// Useful for distributed tracing: receiving trace info from HTTP headers
+func InjectTraceContext(ctx context.Context, traceIDHex, spanIDHex string) (context.Context, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Parse trace ID (32 hex chars)
+	traceIDBytes, err := hex.DecodeString(traceIDHex)
+	if err != nil || len(traceIDBytes) != 16 {
+		return ctx, fmt.Errorf("invalid trace_id: must be 32 hex characters")
+	}
+	var traceID oteltrace.TraceID
+	copy(traceID[:], traceIDBytes)
+
+	// Parse span ID (16 hex chars)
+	spanIDBytes, err := hex.DecodeString(spanIDHex)
+	if err != nil || len(spanIDBytes) != 8 {
+		return ctx, fmt.Errorf("invalid span_id: must be 16 hex characters")
+	}
+	var spanID oteltrace.SpanID
+	copy(spanID[:], spanIDBytes)
+
+	// Create span context
+	spanContext := oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     spanID,
+		TraceFlags: oteltrace.FlagsSampled,
+	})
+
+	// Inject into context
+	return oteltrace.ContextWithSpanContext(ctx, spanContext), nil
+}
+
+// StartSpanWithRemoteParent starts a new span with a remote parent
+// Extracts parent trace info from HTTP headers and creates a child span
+func StartSpanWithRemoteParent(ctx context.Context, spanName string, parentTraceID, parentSpanID string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span, error) {
+	// Inject parent trace context
+	ctx, err := InjectTraceContext(ctx, parentTraceID, parentSpanID)
+	if err != nil {
+		return ctx, nil, err
+	}
+
+	// Start child span
+	ctx, span := StartSpan(ctx, spanName, opts...)
+	return ctx, span, nil
+}
+
+// ExtractTraceInfo extracts trace_id and span_id as hex strings
+func ExtractTraceInfo(ctx context.Context) (traceID string, spanID string) {
+	return GetTraceID(ctx), GetSpanID(ctx)
 }
