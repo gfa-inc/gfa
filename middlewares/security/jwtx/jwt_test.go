@@ -1,4 +1,4 @@
-package security
+package jwtx
 
 import (
 	"net/http"
@@ -33,7 +33,7 @@ func setupTest() {
 func TestJwtValidator_GenerateToken(t *testing.T) {
 	setupTest()
 
-	jv := NewJwtValidator()
+	jv := Default()
 
 	// 生成 token
 	token, err := jv.GenerateToken("user123", "john_doe", map[string]interface{}{
@@ -56,7 +56,7 @@ func TestJwtValidator_GenerateToken(t *testing.T) {
 func TestJwtValidator_ParseToken(t *testing.T) {
 	setupTest()
 
-	jv := NewJwtValidator()
+	jv := Default()
 
 	// 生成有效 token
 	validToken, _ := jv.GenerateToken("user123", "john_doe", nil)
@@ -81,7 +81,7 @@ func TestJwtValidator_ParseToken(t *testing.T) {
 func TestJwtValidator_Valid(t *testing.T) {
 	setupTest()
 
-	jv := NewJwtValidator()
+	jv := Default()
 	gin.SetMode(gin.TestMode)
 
 	// 生成有效 token
@@ -107,7 +107,7 @@ func TestJwtValidator_Valid(t *testing.T) {
 func TestJwtValidator_Valid_NoToken(t *testing.T) {
 	setupTest()
 
-	jv := NewJwtValidator()
+	jv := Default()
 	gin.SetMode(gin.TestMode)
 
 	// 创建没有 token 的请求
@@ -124,7 +124,7 @@ func TestJwtValidator_Valid_NoToken(t *testing.T) {
 func TestJwtValidator_RefreshToken(t *testing.T) {
 	setupTest()
 
-	jv := NewJwtValidator()
+	jv := Default()
 
 	// 生成原始 token
 	originalToken, _ := jv.GenerateToken("user123", "john_doe", map[string]interface{}{
@@ -162,7 +162,7 @@ func TestJwtValidator_AutoRefresh(t *testing.T) {
 	config.SetDefault("security.jwt.refresh_threshold", 8) // 剩余 8 秒时续期
 	config.SetDefault("security.jwt.auto_refresh", true)   // 确保自动续期开启
 
-	jv := NewJwtValidator()
+	jv := Default()
 	gin.SetMode(gin.TestMode)
 
 	// 创建一个即将过期的 token（剩余 5 秒）
@@ -207,7 +207,7 @@ func TestJwtValidator_TokenFromMultipleSources(t *testing.T) {
 	t.Run("FromHeader", func(t *testing.T) {
 		setupTest()
 		config.SetDefault("security.jwt.token_lookup", "header:Authorization")
-		jv := NewJwtValidator()
+		jv := Default()
 		token, _ := jv.GenerateToken("user123", "john_doe", nil)
 
 		w := httptest.NewRecorder()
@@ -223,7 +223,7 @@ func TestJwtValidator_TokenFromMultipleSources(t *testing.T) {
 	t.Run("FromQuery", func(t *testing.T) {
 		setupTest()
 		config.SetDefault("security.jwt.token_lookup", "query:token")
-		jv := NewJwtValidator()
+		jv := Default()
 		token, _ := jv.GenerateToken("user123", "john_doe", nil)
 
 		// 使用 gin router 来正确处理 query 参数
@@ -244,7 +244,7 @@ func TestJwtValidator_TokenFromMultipleSources(t *testing.T) {
 	t.Run("FromCookie", func(t *testing.T) {
 		setupTest()
 		config.SetDefault("security.jwt.token_lookup", "cookie:jwt_token")
-		jv := NewJwtValidator()
+		jv := Default()
 		token, _ := jv.GenerateToken("user123", "john_doe", nil)
 
 		// 使用 gin router 来正确处理 cookie
@@ -281,7 +281,7 @@ func TestJwtValidator_DifferentSigningMethods(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			config.SetDefault("security.jwt.signing_method", tc.method)
-			jv := NewJwtValidator()
+			jv := Default()
 
 			token, err := jv.GenerateToken("user123", "john_doe", nil)
 			assert.NoError(t, err)
@@ -332,7 +332,7 @@ func TestGetHelperFunctions(t *testing.T) {
 }
 
 // 辅助函数：创建过期的 token
-func createExpiredToken(t *testing.T, jv *JwtValidator) string {
+func createExpiredToken(t *testing.T, jv *Validator) string {
 	claims := &Claims{
 		UserID:   "user123",
 		Username: "john_doe",

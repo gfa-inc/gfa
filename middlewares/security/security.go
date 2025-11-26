@@ -6,6 +6,9 @@ import (
 
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/logger"
+	"github.com/gfa-inc/gfa/middlewares/security/apikey"
+	"github.com/gfa-inc/gfa/middlewares/security/jwtx"
+	"github.com/gfa-inc/gfa/middlewares/security/session"
 	"github.com/gfa-inc/gfa/utils/router"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
@@ -43,12 +46,6 @@ func init() {
 	customValidators = make(map[string]Validator)
 }
 
-func newApiKeyValidator() *ApiKeyValidator {
-	config.SetDefault("security.api_key.header_key", "X-Api-Key")
-	headerKey := config.GetString("security.api_key.header_key")
-	return NewApiKeyValidator(headerKey, config.GetString("security.api_key.lookup"))
-}
-
 func WithValidator(name string, v Validator) {
 	customValidators[name] = v
 }
@@ -57,13 +54,13 @@ func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
 
 	if config.Get("security.session") != nil {
-		validators["session"] = NewSessionValidator()
+		validators["session"] = session.Default()
 	}
 	if config.Get("security.jwt") != nil {
-		validators["jwt"] = NewJwtValidator()
+		validators["jwt"] = jwtx.Default()
 	}
 	if config.Get("security.api_key") != nil {
-		validators["api_key"] = newApiKeyValidator()
+		validators["api_key"] = apikey.Default()
 	}
 
 	for k, v := range customValidators {

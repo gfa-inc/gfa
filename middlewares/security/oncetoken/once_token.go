@@ -24,29 +24,29 @@ var (
 )
 
 const (
-	OnceTokenContextKey    = "once_token"
+	ContextKey             = "once_token"
 	DefaultOnceTokenExpire = 300 // 5 minutes
 	DefaultOnceTokenLookup = "header:X-Once-Token"
 	DefaultOnceTokenPrefix = "once_token:"
 )
 
-// OnceTokenConfig once token configuration
-type OnceTokenConfig struct {
+// Config once token configuration
+type Config struct {
 	Expire      int64  `mapstructure:"expire"`       // Expiration time in seconds
 	TokenLookup string `mapstructure:"token_lookup"` // Token lookup location "header:X-Once-Token" or "query:token"
 	Prefix      string `mapstructure:"prefix"`       // Redis key prefix
 }
 
-// OnceTokenValidator once token validator
-type OnceTokenValidator struct {
-	config         OnceTokenConfig
+// Validator once token validator
+type Validator struct {
+	config         Config
 	tokenLookupMap [][2]string
 	redisClient    redis.UniversalClient
 }
 
-// NewOnceTokenValidator creates a once token validator
-func NewOnceTokenValidator() *OnceTokenValidator {
-	otv := &OnceTokenValidator{}
+// Default creates a once token validator from config file
+func Default() *Validator {
+	otv := &Validator{}
 	otv.loadConfig()
 	otv.parseTokenLookup()
 
@@ -59,9 +59,9 @@ func NewOnceTokenValidator() *OnceTokenValidator {
 	return otv
 }
 
-// NewOnceTokenValidatorWithConfig creates a once token validator with custom config
-func NewOnceTokenValidatorWithConfig(cfg OnceTokenConfig, redisClient ...redis.UniversalClient) *OnceTokenValidator {
-	otv := &OnceTokenValidator{
+// New creates a once token validator with custom config
+func New(cfg Config, redisClient ...redis.UniversalClient) *Validator {
+	otv := &Validator{
 		config: cfg,
 	}
 
@@ -95,7 +95,7 @@ func NewOnceTokenValidatorWithConfig(cfg OnceTokenConfig, redisClient ...redis.U
 }
 
 // loadConfig loads configuration from config file
-func (ot *OnceTokenValidator) loadConfig() {
+func (ot *Validator) loadConfig() {
 	// Set default values
 	config.SetDefault("security.once_token.expire", DefaultOnceTokenExpire)
 	config.SetDefault("security.once_token.token_lookup", DefaultOnceTokenLookup)
@@ -111,7 +111,7 @@ func (ot *OnceTokenValidator) loadConfig() {
 }
 
 // parseTokenLookup parses token lookup configuration
-func (ot *OnceTokenValidator) parseTokenLookup() {
+func (ot *Validator) parseTokenLookup() {
 	fields := strings.Split(ot.config.TokenLookup, ",")
 	ot.tokenLookupMap = make([][2]string, 0, len(fields))
 	for _, field := range fields {
@@ -123,7 +123,7 @@ func (ot *OnceTokenValidator) parseTokenLookup() {
 }
 
 // Valid validates once token
-func (ot *OnceTokenValidator) Valid(c *gin.Context) error {
+func (ot *Validator) Valid(c *gin.Context) error {
 	tokenString, err := ot.extractToken(c)
 	if err != nil {
 		return err
@@ -136,14 +136,14 @@ func (ot *OnceTokenValidator) Valid(c *gin.Context) error {
 	}
 
 	// Store token and path in context
-	c.Set(OnceTokenContextKey, tokenString)
+	c.Set(ContextKey, tokenString)
 	c.Set("once_token_path", path)
 
 	return nil
 }
 
 // extractToken extracts token from request
-func (ot *OnceTokenValidator) extractToken(c *gin.Context) (string, error) {
+func (ot *Validator) extractToken(c *gin.Context) (string, error) {
 	for _, parts := range ot.tokenLookupMap {
 		lookup, key := parts[0], parts[1]
 
@@ -169,7 +169,7 @@ func (ot *OnceTokenValidator) extractToken(c *gin.Context) (string, error) {
 }
 
 // GenerateToken generates a once token
-func (ot *OnceTokenValidator) GenerateToken(ctx context.Context, path string, expire ...time.Duration) (string, error) {
+func (ot *Validator) GenerateToken(ctx context.Context, path string, expire ...time.Duration) (string, error) {
 	// Generate random token
 	token, err := ot.generateRandomToken()
 	if err != nil {
@@ -195,7 +195,7 @@ func (ot *OnceTokenValidator) GenerateToken(ctx context.Context, path string, ex
 }
 
 // ValidateAndConsumeToken validates and consumes once token
-func (ot *OnceTokenValidator) ValidateAndConsumeToken(ctx context.Context, token string, currentPath string) (string, error) {
+func (ot *Validator) ValidateAndConsumeToken(ctx context.Context, token string, currentPath string) (string, error) {
 	if token == "" {
 		return "", ErrOnceTokenInvalid
 	}
@@ -230,7 +230,7 @@ func (ot *OnceTokenValidator) ValidateAndConsumeToken(ctx context.Context, token
 }
 
 // generateRandomToken generates a random token using UUID32 format
-func (ot *OnceTokenValidator) generateRandomToken() (string, error) {
+func (ot *Validator) generateRandomToken() (string, error) {
 	// Generate UUID and remove hyphens to get 32-character hex string
 	token := strings.ReplaceAll(uuid.New().String(), "-", "")
 	return token, nil
@@ -238,7 +238,7 @@ func (ot *OnceTokenValidator) generateRandomToken() (string, error) {
 
 // GetOnceToken gets once token from gin.Context
 func GetOnceToken(c *gin.Context) (string, bool) {
-	token, exists := c.Get(OnceTokenContextKey)
+	token, exists := c.Get(ContextKey)
 	if !exists {
 		return "", false
 	}
@@ -246,12 +246,12 @@ func GetOnceToken(c *gin.Context) (string, bool) {
 	return tokenStr, ok
 }
 
-var globalOnceTokenValidator *OnceTokenValidator
+var globalOnceTokenValidator *Validator
 
 // InitOnceToken initializes global once token validator (optional, can also be auto-initialized via security config)
 func InitOnceToken() {
 	if globalOnceTokenValidator == nil {
-		globalOnceTokenValidator = NewOnceTokenValidator()
+		globalOnceTokenValidator = Default()
 	}
 }
 
@@ -273,11 +273,11 @@ func ValidateOnceToken(ctx context.Context, token string, currentPath string) (s
 	return globalOnceTokenValidator.ValidateAndConsumeToken(ctx, token, currentPath)
 }
 
-// OnceTokenOption defines option for OnceTokenMiddleware
-type OnceTokenOption func(*OnceTokenConfig)
+// Option defines option for OnceTokenMiddleware
+type Option func(*Config)
 
-// OnceTokenMiddlewareConfig holds middleware configuration
-type OnceTokenMiddlewareConfig struct {
+// MiddlewareConfig holds middleware configuration
+type MiddlewareConfig struct {
 	expire      *int64
 	tokenLookup *string
 	prefix      *string
@@ -285,35 +285,35 @@ type OnceTokenMiddlewareConfig struct {
 }
 
 // WithExpire sets the token expiration time in seconds
-func WithExpire(expire int64) OnceTokenOption {
-	return func(c *OnceTokenConfig) {
+func WithExpire(expire int64) Option {
+	return func(c *Config) {
 		c.Expire = expire
 	}
 }
 
 // WithTokenLookup sets the token lookup location (e.g., "header:X-Once-Token" or "query:token")
-func WithTokenLookup(lookup string) OnceTokenOption {
-	return func(c *OnceTokenConfig) {
+func WithTokenLookup(lookup string) Option {
+	return func(c *Config) {
 		c.TokenLookup = lookup
 	}
 }
 
 // WithPrefix sets the Redis key prefix
-func WithPrefix(prefix string) OnceTokenOption {
-	return func(c *OnceTokenConfig) {
+func WithPrefix(prefix string) Option {
+	return func(c *Config) {
 		c.Prefix = prefix
 	}
 }
 
-// OnceTokenMiddleware creates once token middleware
+// Middleware creates once token middleware
 // Used to protect specific routes, requires request to have a valid once token
 // opts: optional configuration using WithXXX functions
 // Returns the validator instance and the middleware handler
-func OnceTokenMiddleware(opts ...OnceTokenOption) (*OnceTokenValidator, gin.HandlerFunc) {
-	var validator *OnceTokenValidator
+func Middleware(opts ...Option) (*Validator, gin.HandlerFunc) {
+	var validator *Validator
 
 	// Build OnceTokenConfig from middleware config
-	cfg := OnceTokenConfig{
+	cfg := Config{
 		Expire:      DefaultOnceTokenExpire,
 		TokenLookup: DefaultOnceTokenLookup,
 		Prefix:      DefaultOnceTokenPrefix,
@@ -324,7 +324,7 @@ func OnceTokenMiddleware(opts ...OnceTokenOption) (*OnceTokenValidator, gin.Hand
 	}
 
 	// Create validator with config
-	validator = NewOnceTokenValidatorWithConfig(cfg)
+	validator = New(cfg)
 
 	handler := func(c *gin.Context) {
 		err := validator.Valid(c)

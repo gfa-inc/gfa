@@ -10,6 +10,7 @@ import (
 	"github.com/gfa-inc/gfa/common/mq/kafkax"
 	"github.com/gfa-inc/gfa/core"
 	"github.com/gfa-inc/gfa/middlewares/security"
+	"github.com/gfa-inc/gfa/middlewares/security/session"
 	"github.com/gfa-inc/gfa/utils/httpmethod"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -32,9 +33,9 @@ func (*testController) hello(c *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(c)
-	session.Set(security.SessionKey, q)
-	err := session.Save()
+	sess := sessions.Default(c)
+	sess.Set(session.DefaultSessionKey, q)
+	err := sess.Save()
 	if err != nil {
 		logger.TError(c, err)
 		_ = c.Error(err)
