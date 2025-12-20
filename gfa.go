@@ -249,7 +249,12 @@ func AddGroupControllers(group string, controllers ...core.Controller) {
 func Async(fn func()) {
 	cancelWg.Add(1)
 	go func() {
-		defer cancelWg.Done()
+		defer func() {
+			if err := recover(); err != nil {
+				logger.Errorf("panic in Async: %v", err)
+			}
+			cancelWg.Done()
+		}()
 		fn()
 	}()
 }
@@ -258,7 +263,12 @@ func Async(fn func()) {
 func AsyncWithCancel(fn func(cancelCtx context.Context)) {
 	cancelWg.Add(1)
 	go func() {
-		defer cancelWg.Done()
+		defer func() {
+			if err := recover(); err != nil {
+				logger.Errorf("panic in AsyncWithCancel: %v", err)
+			}
+			cancelWg.Done()
+		}()
 		fn(cancelCtx)
 	}()
 }
