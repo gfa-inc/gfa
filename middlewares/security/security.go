@@ -39,6 +39,7 @@ var (
 	matcher          *router.RequestMatcher
 	validators       map[string]Validator
 	customValidators map[string]Validator
+	apiPrefix        string
 )
 
 func init() {
@@ -52,6 +53,13 @@ func WithValidator(name string, v Validator) {
 
 func Security() gin.HandlerFunc {
 	matcher = router.NewRequestMatcher()
+
+	// Get API prefix from config, default to base_path
+	apiPrefix = config.GetString("security.api_prefix")
+	if apiPrefix == "" {
+		apiPrefix = config.GetString("server.base_path")
+	}
+	logger.Debugf("Security API prefix: %s", apiPrefix)
 
 	if config.Get("security.session") != nil {
 		validators["session"] = session.Default()
@@ -71,6 +79,13 @@ func Security() gin.HandlerFunc {
 	logger.Info("Security middleware enabled")
 
 	return func(c *gin.Context) {
+		// Check if the request path matches the API prefix
+		// If API prefix is set and the path doesn't match, skip security validation
+		if apiPrefix != "" && !strings.HasPrefix(c.Request.URL.Path, apiPrefix) {
+			c.Next()
+			return
+		}
+
 		if matcher.Match(c.FullPath(), c.Request.Method) {
 			c.Set(PermittedFlag, true)
 			c.Next()
