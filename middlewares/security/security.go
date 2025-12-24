@@ -150,6 +150,5 @@ func SetSession(c *gin.Context, value any) error {
 	}
 
 	sessionValidator := v.(*session.Validator)
-	sessionValidator.Set(c, value)
-	return nil
+	return sessionValidator.Set(c, value)
 }

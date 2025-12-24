@@ -79,9 +79,10 @@ func (v *Validator) Valid(c *gin.Context) error {
 	return nil
 }
 
-func (v *Validator) Set(c *gin.Context, value any) {
+func (v *Validator) Set(c *gin.Context, value any) error {
 	session := sessions.Default(c)
 	session.Set(v.config.SessionKey, value)
+	return session.Save()
 }
 
 // GetSession retrieves session value from gin.Context
