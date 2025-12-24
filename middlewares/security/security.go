@@ -1,6 +1,7 @@
 package security
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -31,8 +32,15 @@ func NewValidator(f func(c *gin.Context) error) *ValidatorWrapper {
 }
 
 const (
-	PermittedFlag = "security_permitted"
-	Type          = "security"
+	PermittedFlag               = "security_permitted"
+	Type                        = "security"
+	DefaultSessionValidatorName = "session"
+	DefaultJWTValidatorName     = "jwt"
+	DefaultApiKeyValidatorName  = "api_key"
+)
+
+var (
+	ErrNoSessionValidator = errors.New("no default session validator configured")
 )
 
 var (
@@ -62,13 +70,13 @@ func Security() gin.HandlerFunc {
 	logger.Debugf("Security API prefix: %s", apiPrefix)
 
 	if config.Get("security.session") != nil {
-		validators["session"] = session.Default()
+		validators[DefaultSessionValidatorName] = session.Default()
 	}
 	if config.Get("security.jwt") != nil {
-		validators["jwt"] = jwtx.Default()
+		validators[DefaultJWTValidatorName] = jwtx.Default()
 	}
 	if config.Get("security.api_key") != nil {
-		validators["api_key"] = apikey.Default()
+		validators[DefaultApiKeyValidatorName] = apikey.Default()
 	}
 
 	for k, v := range customValidators {
@@ -133,4 +141,15 @@ func PermitRoutes(routes [][]any) {
 
 func IsPermitted(c *gin.Context) bool {
 	return c.GetBool(PermittedFlag)
+}
+
+func SetSession(c *gin.Context, value any) error {
+	v, ok := validators[DefaultSessionValidatorName]
+	if !ok {
+		return ErrNoSessionValidator
+	}
+
+	sessionValidator := v.(*session.Validator)
+	sessionValidator.Set(c, value)
+	return nil
 }

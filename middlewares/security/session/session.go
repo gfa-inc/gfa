@@ -79,6 +79,11 @@ func (v *Validator) Valid(c *gin.Context) error {
 	return nil
 }
 
+func (v *Validator) Set(c *gin.Context, value any) {
+	session := sessions.Default(c)
+	session.Set(v.config.SessionKey, value)
+}
+
 // GetSession retrieves session value from gin.Context
 func GetSession(c *gin.Context) (interface{}, bool) {
 	value, exists := c.Get(ContextKey)
@@ -93,14 +98,6 @@ func GetSessionString(c *gin.Context) (string, bool) {
 	}
 	str, ok := value.(string)
 	return str, ok
-}
-
-// Key Deprecated: Use Config.SessionKey instead
-var Key = DefaultSessionKey
-
-// NewSessionValidator Deprecated: Use Default instead
-func NewSessionValidator() *Validator {
-	return Default()
 }
 
 // Option defines option for session middleware
