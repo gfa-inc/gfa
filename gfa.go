@@ -229,19 +229,21 @@ func AddControllers(controllers ...core.Controller) {
 type GroupController struct {
 	Group       string
 	Controllers []core.Controller
+	Handlers    []gin.HandlerFunc
 }
 
 func (gc *GroupController) Setup(r *gin.RouterGroup) {
-	gr := r.Group(gc.Group)
+	gr := r.Group(gc.Group, gc.Handlers...)
 	for _, controller := range gc.Controllers {
 		controller.Setup(gr)
 	}
 }
 
-func AddGroupControllers(group string, controllers ...core.Controller) {
+func AddGroupControllers(group string, handlers []gin.HandlerFunc, controllers ...core.Controller) {
 	gfa.controllers = append(gfa.controllers, &GroupController{
 		Group:       group,
 		Controllers: controllers,
+		Handlers:    handlers,
 	})
 }
 
