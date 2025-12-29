@@ -26,7 +26,7 @@ func Setup() {
 		casbinModelConf = string(resources.CasbinModelConf)
 	}
 	if ruleTable == nil {
-		ruleTable = SysCasbinRule{}
+		ruleTable = &SysCasbinRule{}
 	}
 
 	var err error
