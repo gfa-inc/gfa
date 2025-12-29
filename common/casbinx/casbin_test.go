@@ -28,6 +28,32 @@ func TestSetup(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+// TestAdapterTableName 测试 adapter 的表名配置
+func TestAdapterTableName(t *testing.T) {
+	// 创建模型
+	m, err := model.NewModelFromString(string(resources.CasbinModelConf))
+	require.NoError(t, err, "加载 casbin 模型失败")
+
+	// 创建自定义表
+	customTable := SysCasbinRule{}
+	t.Logf("自定义表的 TableName: %s", customTable.TableName())
+
+	// 创建 enforcer（使用内存适配器）
+	e, err := casbin.NewEnforcer(m)
+	require.NoError(t, err, "创建 enforcer 失败")
+
+	// 获取 adapter 并检查表名
+	adapter := e.GetAdapter()
+	if adapter != nil {
+		t.Logf("Adapter 类型: %T", adapter)
+
+		// 尝试类型断言获取表名
+		if a, ok := adapter.(interface{ GetTableName() string }); ok {
+			t.Logf("Adapter 的表名: %s", a.GetTableName())
+		}
+	}
+}
+
 // TestCasbinModelWithCSV 使用 CSV 数据验证 casbin 模型配置
 func TestCasbinModelWithCSV(t *testing.T) {
 	// CSV 格式：策略类型,v0,v1,v2,v3,v4,v5
