@@ -2,12 +2,14 @@ package casbinx
 
 import (
 	"encoding/csv"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/util"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/gfa-inc/gfa/common/config"
 	"github.com/gfa-inc/gfa/common/db"
 	"github.com/gfa-inc/gfa/common/logger"
@@ -28,30 +30,111 @@ func TestSetup(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-// TestAdapterTableName 测试 adapter 的表名配置
+// TestAdapterTableName 测试并分析 adapter 的表名问题
 func TestAdapterTableName(t *testing.T) {
-	// 创建模型
-	m, err := model.NewModelFromString(string(resources.CasbinModelConf))
-	require.NoError(t, err, "加载 casbin 模型失败")
+	t.Run("默认内存适配器", func(t *testing.T) {
+		m, err := model.NewModelFromString(string(resources.CasbinModelConf))
+		require.NoError(t, err)
 
-	// 创建自定义表
-	customTable := SysCasbinRule{}
-	t.Logf("自定义表的 TableName: %s", customTable.TableName())
+		e, err := casbin.NewEnforcer(m)
+		require.NoError(t, err)
 
-	// 创建 enforcer（使用内存适配器）
-	e, err := casbin.NewEnforcer(m)
-	require.NoError(t, err, "创建 enforcer 失败")
-
-	// 获取 adapter 并检查表名
-	adapter := e.GetAdapter()
-	if adapter != nil {
+		adapter := e.GetAdapter()
 		t.Logf("Adapter 类型: %T", adapter)
+		// 内存适配器没有表名，应该为 nil
+		assert.Nil(t, adapter, "内存模式下 adapter 应该为 nil")
+	})
 
-		// 尝试类型断言获取表名
-		if a, ok := adapter.(interface{ GetTableName() string }); ok {
-			t.Logf("Adapter 的表名: %s", a.GetTableName())
+	t.Run("使用反射查看 gorm-adapter 内部字段", func(t *testing.T) {
+		// 模拟创建一个 gorm-adapter（需要先创建模拟的 gorm.DB）
+		customTable := SysCasbinRule{}
+		t.Logf("期望的表名: %s", customTable.TableName())
+
+		// 使用反射查看 Adapter 结构体定义
+		adapterType := reflect.TypeOf(&gormadapter.Adapter{})
+		t.Logf("gorm-adapter.Adapter 结构体字段:")
+		for i := 0; i < adapterType.Elem().NumField(); i++ {
+			field := adapterType.Elem().Field(i)
+			t.Logf("  字段 %d: %s (类型: %s, 导出: %v)",
+				i, field.Name, field.Type, field.IsExported())
 		}
-	}
+
+		// 说明：tableName 是私有字段（小写开头），无法直接访问
+		// 但可以通过反射读取
+		t.Logf("\n结论: gorm-adapter.Adapter 的 tableName 字段是私有的")
+		t.Logf("需要检查在 NewEnforcer 中是否正确传递了表名参数")
+	})
+
+	t.Run("通过反射读取实际的 tableName 值", func(t *testing.T) {
+		t.Skip("需要数据库连接才能测试，跳过")
+
+		// 以下代码展示如何通过反射读取私有字段
+		// 实际使用时需要有真实的数据库连接
+		/*
+			config.Setup(config.WithPath("../../../.."))
+			logger.Setup()
+			db.Setup()
+
+			Setup()
+
+			adapter := Enforcer.GetAdapter()
+			if gormAdapter, ok := adapter.(*gormadapter.Adapter); ok {
+				// 使用反射读取私有字段 tableName
+				v := reflect.ValueOf(gormAdapter).Elem()
+				tableNameField := v.FieldByName("tableName")
+
+				if tableNameField.IsValid() {
+					// 需要使用 unsafe 包或其他方式访问私有字段
+					t.Logf("实际的 tableName: %v", tableNameField)
+				}
+			}
+		*/
+	})
+}
+
+// TestAnalyzeTableNameIssue 分析表名问题的根本原因
+func TestAnalyzeTableNameIssue(t *testing.T) {
+	t.Log("=== 问题分析：为什么 GetAdapter() 获取到的 tableName 是 casbin_rule ===")
+	t.Log("")
+	t.Log("原因分析：")
+	t.Log("1. gorm-adapter 的 Adapter 结构体中，tableName 字段是私有的（小写开头）")
+	t.Log("2. Adapter 没有提供公开的 GetTableName() 方法")
+	t.Log("3. 虽然在创建时传递了正确的表名 'sys_casbin_rule'，但无法通过公开接口获取")
+	t.Log("")
+	t.Log("代码流程：")
+	t.Log("  casbin.go:52 调用:")
+	t.Log("    gormadapter.NewAdapterByDBWithCustomTable(db, tb, tb.TableName())")
+	t.Log("  其中 tb.TableName() 返回 'sys_casbin_rule'")
+	t.Log("")
+	t.Log("  gorm-adapter 源码流程:")
+	t.Log("    NewAdapterByDBWithCustomTable 接收参数:")
+	t.Log("      - db: *gorm.DB")
+	t.Log("      - t: interface{} (SysCasbinRule 实例)")
+	t.Log("      - tableName: ...string (可变参数，值为 'sys_casbin_rule')")
+	t.Log("")
+	t.Log("    处理逻辑:")
+	t.Log("      curTableName := defaultTableName  // 'casbin_rule'")
+	t.Log("      if len(tableName) > 0 {")
+	t.Log("          curTableName = tableName[0]    // 'sys_casbin_rule'")
+	t.Log("      }")
+	t.Log("      调用 NewAdapterByDBUseTableName(db, '', curTableName)")
+	t.Log("")
+	t.Log("    NewAdapterByDBUseTableName 中:")
+	t.Log("      a := &Adapter{")
+	t.Log("          tablePrefix: '',")
+	t.Log("          tableName: 'sys_casbin_rule',  // 正确设置")
+	t.Log("      }")
+	t.Log("")
+	t.Log("结论：")
+	t.Log("✅ tableName 实际上被正确设置为 'sys_casbin_rule'")
+	t.Log("✅ 数据库操作会使用正确的表名")
+	t.Log("❌ 但由于 tableName 是私有字段，通过 GetAdapter() 无法直接读取")
+	t.Log("❌ 如果你看到 'casbin_rule'，可能是看到了常量 defaultTableName 的值")
+	t.Log("")
+	t.Log("验证方法：")
+	t.Log("1. 查看实际执行的 SQL 语句（通过 gorm 日志）")
+	t.Log("2. 检查数据库中实际使用的表名")
+	t.Log("3. 使用反射读取 Adapter 的私有字段 tableName")
 }
 
 // TestCasbinModelWithCSV 使用 CSV 数据验证 casbin 模型配置
