@@ -113,7 +113,11 @@ func Security() gin.HandlerFunc {
 			}
 		}
 
-		logger.Errorf("Unauthorized access: %s", c.FullPath())
+		logger.Warnf("Unauthorized access attempt - path=%s method=%s ip=%s ua=%s",
+			c.FullPath(),
+			c.Request.Method,
+			c.ClientIP(),
+			c.Request.UserAgent())
 
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
