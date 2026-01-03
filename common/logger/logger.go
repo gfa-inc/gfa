@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gookit/color"
@@ -30,8 +32,9 @@ type coreFactory func(option Config) zapcore.Core
 
 // Tracing keys
 const (
-	TraceIDKey = "trace_id"
-	SpanIDKey  = "span_id"
+	TraceIDKey  = "trace_id"
+	SpanIDKey   = "span_id"
+	SpanNameKey = "span_name"
 )
 
 // TracingConfig controls distributed tracing behavior
@@ -67,6 +70,7 @@ type Logger struct {
 	CtxKeys       []string
 	CtxKeyMapping map[string]string
 	tracingConfig *TracingConfig
+	mu            sync.RWMutex // protects CtxKeys
 }
 
 func New(option Config) *Logger {
@@ -130,7 +134,10 @@ func NewBasic(option Config) *Logger {
 	}
 
 	l := &Logger{
-		level: level,
+		level:         level,
+		CtxKeys:       option.CtxKeys,
+		CtxKeyMapping: option.CtxKeyMapping,
+		tracingConfig: initializeTracingConfig(option.Tracing),
 	}
 
 	core := zapcore.NewTee(coreMap["console"](option))
@@ -142,15 +149,23 @@ func NewBasic(option Config) *Logger {
 }
 
 func (l *Logger) AddContextKey(key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.CtxKeys = append(l.CtxKeys, key)
 }
 
 func (l *Logger) Clone(level zapcore.Level) Logger {
-	cloned := *l
-	cloned.level = level
-	cloned.CtxKeys = l.CtxKeys
-	cloned.CtxKeyMapping = l.CtxKeyMapping
-	return cloned
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	return Logger{
+		inner:         l.inner,
+		level:         level,
+		CtxKeys:       l.CtxKeys,
+		CtxKeyMapping: l.CtxKeyMapping,
+		tracingConfig: l.tracingConfig,
+		// mu is initialized to zero value (unlocked) for the clone
+	}
 }
 
 func (l *Logger) getKeyName(key string) string {
@@ -172,7 +187,7 @@ func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 
 	// Handle tracing if enabled
 	if l.tracingConfig != nil && l.tracingConfig.Enabled {
-		traceID, spanID := l.extractTraceInfo(ctx)
+		traceID, spanID, spanName := l.extractTraceInfo(ctx)
 
 		if traceID != "" {
 			newLogger = newLogger.With(l.getKeyName(TraceIDKey), traceID)
@@ -180,13 +195,20 @@ func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 		if spanID != "" {
 			newLogger = newLogger.With(l.getKeyName(SpanIDKey), spanID)
 		}
+		if spanName != "" {
+			newLogger = newLogger.With(l.getKeyName(SpanNameKey), spanName)
+		}
 	}
 
-	// Add other context keys
-	for _, v := range l.CtxKeys {
-		// Skip trace_id/span_id if already handled by tracing config
+	// Add other context keys (protected by read lock)
+	l.mu.RLock()
+	ctxKeys := l.CtxKeys
+	l.mu.RUnlock()
+
+	for _, v := range ctxKeys {
+		// Skip trace_id/span_id/span_name if already handled by tracing config
 		if l.tracingConfig != nil && l.tracingConfig.Enabled {
-			if v == TraceIDKey || v == SpanIDKey {
+			if v == TraceIDKey || v == SpanIDKey || v == SpanNameKey {
 				continue
 			}
 		}
@@ -199,38 +221,82 @@ func (l *Logger) WithContext(ctx context.Context) *zap.SugaredLogger {
 	return newLogger
 }
 
-// extractTraceInfo intelligently extracts trace_id and span_id from context
-// Priority: trace_id from context.Value first, span_id from oteltrace first
-func (l *Logger) extractTraceInfo(ctx context.Context) (traceID string, spanID string) {
-	// trace_id: prioritize context.Value
-	if v := ctx.Value(TraceIDKey); v != nil {
-		if s, ok := v.(string); ok && s != "" {
-			traceID = s
-		}
+// extractTraceInfo intelligently extracts trace_id, span_id and span_name from context
+// Respects PreferOtelSpan configuration to determine extraction priority
+func (l *Logger) extractTraceInfo(ctx context.Context) (traceID string, spanID string, spanName string) {
+	// Get span once to avoid duplicate calls
+	span := oteltrace.SpanFromContext(ctx)
+	spanCtx := span.SpanContext()
+	isValidSpan := spanCtx.IsValid()
+
+	// Determine preference: default to true if not specified
+	preferOtel := true
+	if l.tracingConfig != nil && l.tracingConfig.PreferOtelSpan != nil {
+		preferOtel = *l.tracingConfig.PreferOtelSpan
 	}
-	// If not found in context.Value, try otel span
-	if traceID == "" {
-		span := oteltrace.SpanFromContext(ctx)
-		if span.SpanContext().IsValid() {
-			traceID = span.SpanContext().TraceID().String()
+
+	// Extract trace_id based on preference
+	if preferOtel {
+		// Try otel span first
+		if isValidSpan {
+			traceID = spanCtx.TraceID().String()
+		}
+		// Fallback to context.Value
+		if traceID == "" {
+			if v := ctx.Value(TraceIDKey); v != nil {
+				if s, ok := v.(string); ok {
+					traceID = s
+				}
+			}
+		}
+	} else {
+		// Try context.Value first
+		if v := ctx.Value(TraceIDKey); v != nil {
+			if s, ok := v.(string); ok && s != "" {
+				traceID = s
+			}
+		}
+		// Fallback to otel span
+		if traceID == "" && isValidSpan {
+			traceID = spanCtx.TraceID().String()
 		}
 	}
 
-	// span_id: prioritize oteltrace
-	span := oteltrace.SpanFromContext(ctx)
-	if span.SpanContext().IsValid() {
-		spanID = span.SpanContext().SpanID().String()
-	}
-	// If not found in otel span, try context.Value
-	if spanID == "" {
+	// Extract span_id based on preference
+	if preferOtel {
+		// Try otel span first
+		if isValidSpan {
+			spanID = spanCtx.SpanID().String()
+		}
+		// Fallback to context.Value
+		if spanID == "" {
+			if v := ctx.Value(SpanIDKey); v != nil {
+				if s, ok := v.(string); ok {
+					spanID = s
+				}
+			}
+		}
+	} else {
+		// Try context.Value first
 		if v := ctx.Value(SpanIDKey); v != nil {
-			if s, ok := v.(string); ok {
+			if s, ok := v.(string); ok && s != "" {
 				spanID = s
 			}
 		}
+		// Fallback to otel span
+		if spanID == "" && isValidSpan {
+			spanID = spanCtx.SpanID().String()
+		}
 	}
 
-	return traceID, spanID
+	// Extract span_name from context.Value (always from context, as otel Span doesn't expose name)
+	if v := ctx.Value(SpanNameKey); v != nil {
+		if s, ok := v.(string); ok {
+			spanName = s
+		}
+	}
+
+	return traceID, spanID, spanName
 }
 
 func (l *Logger) Printf(ctx context.Context, format string, args ...any) {
@@ -474,6 +540,7 @@ func (enc *kvConsoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.F
 		for k := range enc.fields {
 			keys = append(keys, k)
 		}
+		sort.Strings(keys)
 
 		for _, k := range keys {
 			line.AppendByte(' ')
@@ -756,9 +823,7 @@ func IsDebugLevelEnabled() bool {
 }
 
 func AddContextKey(key string) {
-	if globalLogger != nil {
-		globalLogger.AddContextKey(key)
-	}
+	globalLogger.AddContextKey(key)
 }
 
 // ===== OpenTelemetry Tracing Helper Functions =====
@@ -781,13 +846,16 @@ func GetTracer() oteltrace.Tracer {
 	return otel.GetTracerProvider().Tracer(tracerName)
 }
 
-// StartSpan starts a new OpenTelemetry span
-// Convenience wrapper around tracer.Start()
+// StartSpan starts a new OpenTelemetry span and automatically stores the span name in context
+// This allows the logger to automatically include span_name in log output
 func StartSpan(ctx context.Context, spanName string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return GetTracer().Start(ctx, spanName, opts...)
+	ctx, span := GetTracer().Start(ctx, spanName, opts...)
+	// Store span name in context for logger access
+	ctx = context.WithValue(ctx, SpanNameKey, spanName)
+	return ctx, span
 }
 
 // GetTraceID extracts trace_id from context (otel span or context.Value)
@@ -834,6 +902,21 @@ func GetSpanID(ctx context.Context) string {
 	return ""
 }
 
+// GetSpanName extracts span_name from context
+func GetSpanName(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if v := ctx.Value(SpanNameKey); v != nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+
+	return ""
+}
+
 // WithTraceID adds trace_id to context using context.Value
 // For middleware that extracts trace_id from HTTP headers
 func WithTraceID(ctx context.Context, traceID string) context.Context {
@@ -850,6 +933,15 @@ func WithSpanID(ctx context.Context, spanID string) context.Context {
 		ctx = context.Background()
 	}
 	return context.WithValue(ctx, SpanIDKey, spanID)
+}
+
+// WithSpanName adds span_name to context using context.Value
+// For cases where span name needs to be manually set
+func WithSpanName(ctx context.Context, spanName string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, SpanNameKey, spanName)
 }
 
 // InjectTraceContext creates a context with manually set trace_id/span_id as otel span context
@@ -900,7 +992,7 @@ func StartSpanWithRemoteParent(ctx context.Context, spanName string, parentTrace
 	return ctx, span, nil
 }
 
-// ExtractTraceInfo extracts trace_id and span_id as hex strings
-func ExtractTraceInfo(ctx context.Context) (traceID string, spanID string) {
-	return GetTraceID(ctx), GetSpanID(ctx)
+// ExtractTraceInfo extracts trace_id, span_id and span_name from context
+func ExtractTraceInfo(ctx context.Context) (traceID string, spanID string, spanName string) {
+	return GetTraceID(ctx), GetSpanID(ctx), GetSpanName(ctx)
 }
