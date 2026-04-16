@@ -16,7 +16,7 @@ type CasbinRuleTable interface {
 }
 
 var (
-	Enforcer        *casbin.Enforcer
+	Enforcer        *casbin.SyncedEnforcer
 	casbinModelConf string
 	ruleTable       CasbinRuleTable
 )
@@ -46,7 +46,7 @@ func SetCasbinRuleTable(tb CasbinRuleTable) {
 	ruleTable = tb
 }
 
-func NewEnforcer(db *gorm.DB, tb CasbinRuleTable, mdl string) (*casbin.Enforcer, error) {
+func NewEnforcer(db *gorm.DB, tb CasbinRuleTable, mdl string) (*casbin.SyncedEnforcer, error) {
 	gormadapter.TurnOffAutoMigrate(db)
 
 	adapter, err := gormadapter.NewAdapterByDBWithCustomTable(db, tb, tb.TableName())
@@ -61,7 +61,7 @@ func NewEnforcer(db *gorm.DB, tb CasbinRuleTable, mdl string) (*casbin.Enforcer,
 		return nil, err
 	}
 
-	enforcer, err := casbin.NewEnforcer(m, adapter)
+	enforcer, err := casbin.NewSyncedEnforcer(m, adapter)
 	if err != nil {
 		logger.Error(err)
 		return nil, err
