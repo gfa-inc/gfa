@@ -25,6 +25,7 @@ type Config struct {
 	DNS             string
 	Level           string
 	ConnMaxLifeTime int
+	MaxOpenConns    int
 	MaxIdleConns    int
 	Default         bool
 }
@@ -48,8 +49,21 @@ func NewClient(option Config) (client *gorm.DB, err error) {
 		return
 	}
 
-	db.SetConnMaxLifetime(5 * time.Minute)
-	db.SetMaxIdleConns(10)
+	connMaxLifeTime := 5
+	if option.ConnMaxLifeTime > 0 {
+		connMaxLifeTime = option.ConnMaxLifeTime
+	}
+	db.SetConnMaxLifetime(time.Duration(connMaxLifeTime) * time.Minute)
+
+	maxIdleConns := 10
+	if option.MaxIdleConns > 0 {
+		maxIdleConns = option.MaxIdleConns
+	}
+	db.SetMaxIdleConns(maxIdleConns)
+
+	if option.MaxOpenConns > 0 {
+		db.SetMaxOpenConns(option.MaxOpenConns)
+	}
 
 	logger.Infof("Connecting to mysql [%s] %s", option.Name, mysqlDial.Config.DSNConfig.Addr)
 	return
