@@ -49,7 +49,7 @@ func NewClient(option Config) (client *gorm.DB, err error) {
 		return
 	}
 
-	connMaxLifeTime := 5
+	connMaxLifeTime := 30
 	if option.ConnMaxLifeTime > 0 {
 		connMaxLifeTime = option.ConnMaxLifeTime
 	}
@@ -61,9 +61,11 @@ func NewClient(option Config) (client *gorm.DB, err error) {
 	}
 	db.SetMaxIdleConns(maxIdleConns)
 
+	maxOpenConns := 30
 	if option.MaxOpenConns > 0 {
-		db.SetMaxOpenConns(option.MaxOpenConns)
+		maxOpenConns = option.MaxOpenConns
 	}
+	db.SetMaxOpenConns(maxOpenConns)
 
 	logger.Infof("Connecting to mysql [%s] %s", option.Name, mysqlDial.Config.DSNConfig.Addr)
 	return
