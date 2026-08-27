@@ -80,15 +80,7 @@ func Setup(opts ...OptionFunc) {
 	}
 
 	config.Koanf = *koanf.New(".")
-	// load from env
-	if config.AutomaticEnv {
-		err := config.Load(env.Provider("", ".", func(s string) string {
-			return s
-		}), nil)
-		if err != nil {
-			configLogger.Panicf(nil, "Fail to load environment variables, %s", err)
-		}
-	}
+
 	// load from file
 	// add current path
 	if lo.IndexOf(config.Paths, ".") == -1 {
@@ -111,11 +103,21 @@ func Setup(opts ...OptionFunc) {
 				continue
 			}
 
-			err = config.Koanf.Load(file.Provider(configFilePath), parser)
+			err = config.Load(file.Provider(configFilePath), parser)
 			if err != nil {
 				configLogger.Panicf(nil, "Fail to load config file %s, %s", configFilePath, err)
 				return
 			}
+		}
+	}
+
+	// load from env
+	if config.AutomaticEnv {
+		err := config.Load(env.Provider("", ".", func(s string) string {
+			return s
+		}), nil)
+		if err != nil {
+			configLogger.Panicf(nil, "Fail to load environment variables, %s", err)
 		}
 	}
 
